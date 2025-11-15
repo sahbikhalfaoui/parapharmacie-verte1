@@ -12,12 +12,9 @@ import {
   Phone, 
   Mail, 
   MapPin, 
-  Clock, 
   CheckCircle, 
-  Users, 
   Award,
   Heart,
-  Sparkles,
   TrendingUp,
   Facebook,
   Instagram,
@@ -77,8 +74,6 @@ export default function VitaPharmWebsite() {
   const [activeSubcategory, setActiveSubcategory] = useState("Tous")
   const [cartItems, setCartItems] = useState<Product[]>([])
   const [isCartOpen, setIsCartOpen] = useState(false)
-  const [newsletterEmail, setNewsletterEmail] = useState("")
-  const [isNewsletterLoading, setIsNewsletterLoading] = useState(false)
   const [user, setUser] = useState<User | null>(null)
   
   const [products, setProducts] = useState<Product[]>([])
@@ -108,83 +103,58 @@ export default function VitaPharmWebsite() {
   }, [])
 
   const loadData = async () => {
-  setIsLoading(true)
-  try {
-    // Fetch categories
-    const categoriesResponse = await fetch('http://localhost:5000/api/categories')
-    const categoriesData = await categoriesResponse.json()
-    
-    // Fetch subcategories
-    const subcategoriesResponse = await fetch('http://localhost:5000/api/subcategories')
-    const subcategoriesData = await subcategoriesResponse.json()
-    
-    // Map subcategories to their categories
-    const categoriesWithSubs = categoriesData.map((cat: any) => ({
-      ...cat,
-      subcategories: subcategoriesData.filter((sub: any) => 
-        sub.category === cat._id || sub.category?._id === cat._id
-      )
-    }))
-    
-    setAllCategories(categoriesWithSubs)
-    const categoryNames = categoriesWithSubs.map((cat: any) => cat.name) || []
-    setCategories(['Tous', ...categoryNames])
+    setIsLoading(true)
+    try {
+      const categoriesResponse = await fetch('https://biopharma-backend.onrender.com/api/categories')
+      const categoriesData = await categoriesResponse.json()
+      
+      const subcategoriesResponse = await fetch('https://biopharma-backend.onrender.com/api/subcategories')
+      const subcategoriesData = await subcategoriesResponse.json()
+      
+      const categoriesWithSubs = categoriesData.map((cat: any) => ({
+        ...cat,
+        subcategories: subcategoriesData.filter((sub: any) => 
+          sub.category === cat._id || sub.category?._id === cat._id
+        )
+      }))
+      
+      setAllCategories(categoriesWithSubs)
+      const categoryNames = categoriesWithSubs.map((cat: any) => cat.name) || []
+      setCategories(['Tous', ...categoryNames])
 
-    // ... rest of your products loading code
-    const productsResponse = await fetch('http://localhost:5000/api/products')
-    const productsData = await productsResponse.json()
-    
-    const transformedProducts = (productsData.products || []).map((product: any) => ({
-      ...product,
-      id: product._id,
-      categoryName: product.category?.name || 'Non catégorisé',
-      subcategoryName: product.subcategory?.name || 'Aucune',
-      brand: product.brand || 'Marque générique',
-      price: parseFloat(product.price.toString().replace(/[^\d.-]/g, '')) || 0,
-      originalPrice: product.originalPrice ? parseFloat(product.originalPrice.toString().replace(/[^\d.-]/g, '')) : null,
-      averageRating: product.averageRating || product.rating || 0,
-      totalReviews: product.totalReviews || product.reviews || 0
-    }))
-    
-    setProducts(transformedProducts)
-    
-    const brands = [...new Set(transformedProducts.map((product: any) => product.brand))].sort()
-    setAvailableBrands(brands)
-    
-    const maxPrice = Math.max(...transformedProducts.map((product: any) => product.price))
-    setPriceRange([0, maxPrice])
-    
-  } catch (error) {
-    console.error('Error loading data:', error)
-    setProducts([])
-    setCategories(['Tous'])
-    setAllCategories([])
-  } finally {
-    setIsLoading(false)
+      const productsResponse = await fetch('https://biopharma-backend.onrender.com/api/products')
+      const productsData = await productsResponse.json()
+      
+      const transformedProducts = (productsData.products || []).map((product: any) => ({
+        ...product,
+        id: product._id,
+        categoryName: product.category?.name || 'Non catégorisé',
+        subcategoryName: product.subcategory?.name || 'Aucune',
+        brand: product.brand || 'Marque générique',
+        price: parseFloat(product.price.toString().replace(/[^\d.-]/g, '')) || 0,
+        originalPrice: product.originalPrice ? parseFloat(product.originalPrice.toString().replace(/[^\d.-]/g, '')) : null,
+        averageRating: product.averageRating || product.rating || 0,
+        totalReviews: product.totalReviews || product.reviews || 0
+      }))
+      
+      setProducts(transformedProducts)
+      
+      const brands = [...new Set(transformedProducts.map((product: any) => product.brand))].sort()
+      setAvailableBrands(brands)
+      
+      const maxPrice = Math.max(...transformedProducts.map((product: any) => product.price))
+      setPriceRange([0, maxPrice])
+      
+    } catch (error) {
+      console.error('Error loading data:', error)
+      setProducts([])
+      setCategories(['Tous'])
+      setAllCategories([])
+    } finally {
+      setIsLoading(false)
+    }
   }
-}
 
-  // FIXED: Remove the problematic useEffect that resets subcategory
-  // This was causing the flickering issue
-  // useEffect(() => {
-  //   if (activeCategory === "Tous") {
-  //     setSubcategories(['Tous'])
-  //     setActiveSubcategory('Tous')
-  //   } else {
-  //     const selectedCategory = allCategories.find(cat => cat.name === activeCategory)
-  //     if (selectedCategory && selectedCategory.subcategories) {
-  //       const subCatNames = selectedCategory.subcategories.map(sub => sub.name)
-  //       setSubcategories(['Tous', ...subCatNames])
-  //       setActiveSubcategory('Tous') // THIS WAS THE PROBLEM - it always reset to "Tous"
-  //     } else {
-  //       setSubcategories(['Tous'])
-  //       setActiveSubcategory('Tous')
-  //     }
-  //   }
-  //   setCurrentPage(1)
-  // }, [activeCategory, allCategories])
-
-  // NEW: Update subcategories when category changes, but DON'T reset active subcategory
   useEffect(() => {
     if (activeCategory === "Tous") {
       setSubcategories(['Tous'])
@@ -200,26 +170,20 @@ export default function VitaPharmWebsite() {
     setCurrentPage(1)
   }, [activeCategory, allCategories])
 
-// Add this new function
-const handleCategoryAndSubcategoryChange = (category: string, subcategory: string = "Tous") => {
-  console.log('🔥 handleCategoryAndSubcategoryChange called:', { category, subcategory })
-  setActiveCategory(category)
-  setActiveSubcategory(subcategory)
-  setCurrentPage(1)
-}
+  const handleCategoryAndSubcategoryChange = (category: string, subcategory: string = "Tous") => {
+    setActiveCategory(category)
+    setActiveSubcategory(subcategory)
+    setCurrentPage(1)
+  }
 
-const handleCategoryChange = (category: string) => {
-  console.log('🔵 handleCategoryChange called:', category)
-  // When changing category, reset subcategory to "Tous"
-  handleCategoryAndSubcategoryChange(category, "Tous")
-}
+  const handleCategoryChange = (category: string) => {
+    handleCategoryAndSubcategoryChange(category, "Tous")
+  }
 
-const handleSubcategoryChange = (subcategory: string) => {
-  console.log('🟢 handleSubcategoryChange called:', subcategory, 'Current category:', activeCategory)
-  // When changing subcategory, keep the current active category
-  setActiveSubcategory(subcategory)
-  setCurrentPage(1)
-}
+  const handleSubcategoryChange = (subcategory: string) => {
+    setActiveSubcategory(subcategory)
+    setCurrentPage(1)
+  }
 
   const handleBrandToggle = (brand: string) => {
     setSelectedBrands(prev => 
@@ -310,73 +274,57 @@ const handleSubcategoryChange = (subcategory: string) => {
 
   const cartCount = cartItems.reduce((sum, item) => sum + item.quantity, 0)
 
-  const handleNewsletterSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setIsNewsletterLoading(true)
-    
-    try {
-      setTimeout(() => {
-        alert("Merci de vous être abonné à notre newsletter !")
-        setNewsletterEmail("")
-        setIsNewsletterLoading(false)
-      }, 1000)
-    } catch (error) {
-      alert("Erreur lors de l'abonnement")
-      setIsNewsletterLoading(false)
-    }
-  }
-
   return (
     <div className="min-h-screen bg-gradient-to-br from-green-50 via-emerald-50 to-teal-50">
-<Navbar 
-  user={user}
-  cartCount={cartItems.length}
-  onAuthModalOpen={(mode) => setAuthModal({ isOpen: true, mode })}
-  onLogout={logout}
-  onAdminRedirect={handleAdminRedirect}
-  onCartOpen={() => setIsCartOpen(true)}
-  categories={allCategories}
-  onCategorySelect={(categoryName, subcategoryName) => {
-    console.log('🚀 Navbar onCategorySelect:', { categoryName, subcategoryName })
-    handleCategoryAndSubcategoryChange(categoryName, subcategoryName || 'Tous')
-    
-    setTimeout(() => {
-      const productsSection = document.getElementById('produits')
-      if (productsSection) {
-        productsSection.scrollIntoView({ behavior: 'smooth', block: 'start' })
-      }
-    }, 150)
-  }}
-/>
-      <HeroSection />
+      <Navbar 
+        user={user}
+        cartCount={cartItems.length}
+        onAuthModalOpen={(mode) => setAuthModal({ isOpen: true, mode })}
+        onLogout={logout}
+        onAdminRedirect={handleAdminRedirect}
+        onCartOpen={() => setIsCartOpen(true)}
+        categories={allCategories}
+        onCategorySelect={(categoryName, subcategoryName) => {
+          handleCategoryAndSubcategoryChange(categoryName, subcategoryName || 'Tous')
+          
+          setTimeout(() => {
+            const productsSection = document.getElementById('produits')
+            if (productsSection) {
+              productsSection.scrollIntoView({ behavior: 'smooth', block: 'start' })
+            }
+          }, 150)
+        }}
+      />
+      
+      <HeroSection onAddToCart={addToCart} />
 
       <ProductsSection 
-  products={products}
-  allCategories={allCategories}
-  categories={categories}
-  subcategories={subcategories}
-  isLoading={isLoading}
-  searchTerm=""
-  activeCategory={activeCategory}
-  activeSubcategory={activeSubcategory}
-  priceRange={priceRange}
-  sortBy={sortBy}
-  sortOrder={sortOrder}
-  currentPage={currentPage}
-  itemsPerPage={itemsPerPage}
-  minRating={minRating}
-  onCategoryChange={handleCategoryChange}
-  onSubcategoryChange={handleSubcategoryChange}
-  onSortChange={handleSortChange}
-  onClearFilters={clearFilters}
-  onAddToCart={addToCart}
-  onPriceRangeChange={setPriceRange}
-  onMinRatingChange={setMinRating}
-  onCurrentPageChange={setCurrentPage}
-  user={user}
-/>
+        products={products}
+        allCategories={allCategories}
+        categories={categories}
+        subcategories={subcategories}
+        isLoading={isLoading}
+        searchTerm=""
+        activeCategory={activeCategory}
+        activeSubcategory={activeSubcategory}
+        priceRange={priceRange}
+        sortBy={sortBy}
+        sortOrder={sortOrder}
+        currentPage={currentPage}
+        itemsPerPage={itemsPerPage}
+        minRating={minRating}
+        onCategoryChange={handleCategoryChange}
+        onSubcategoryChange={handleSubcategoryChange}
+        onSortChange={handleSortChange}
+        onClearFilters={clearFilters}
+        onAddToCart={addToCart}
+        onPriceRangeChange={setPriceRange}
+        onMinRatingChange={setMinRating}
+        onCurrentPageChange={setCurrentPage}
+        user={user}
+      />
 
-      {/* About Section - Enhanced */}
+      {/* About Section */}
       <section id="about" className="py-24 bg-white relative overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-br from-green-50/50 to-emerald-50/50"></div>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative">
@@ -390,19 +338,13 @@ const handleSubcategoryChange = (subcategory: string) => {
             </p>
           </div>
 
-          <div className="grid md:grid-cols-3 gap-8 mb-16">
+          <div className="grid md:grid-cols-2 gap-8 mb-16 max-w-4xl mx-auto">
             {[
               {
                 icon: Shield,
                 title: "Qualité Garantie",
                 description: "Tous nos produits sont certifiés et conformes aux normes internationales les plus strictes",
                 color: "from-blue-500 to-blue-600"
-              },
-              {
-                icon: Users,
-                title: "Service Client Expert",
-                description: "Une équipe de pharmaciens qualifiés à votre écoute 7j/7 pour vous conseiller",
-                color: "from-green-500 to-emerald-600"
               },
               {
                 icon: Award,
@@ -467,7 +409,7 @@ const handleSubcategoryChange = (subcategory: string) => {
         </div>
       </section>
 
-      {/* Features Section - Enhanced */}
+      {/* Features Section */}
       <section className="py-24 bg-gradient-to-br from-gray-50 to-green-50 relative overflow-hidden">
         <div className="absolute inset-0 opacity-10">
           <div className="absolute top-20 left-10 w-72 h-72 bg-green-400 rounded-full blur-3xl"></div>
@@ -477,7 +419,6 @@ const handleSubcategoryChange = (subcategory: string) => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative">
           <div className="text-center mb-16">
             <Badge className="mb-4 bg-emerald-100 text-emerald-700 px-4 py-1">
-              <Sparkles className="w-4 h-4 inline mr-2" />
               Nos Avantages
             </Badge>
             <h2 className="text-4xl lg:text-5xl font-bold mb-6 bg-gradient-to-r from-green-700 to-emerald-600 bg-clip-text text-transparent">
@@ -485,7 +426,7 @@ const handleSubcategoryChange = (subcategory: string) => {
             </h2>
           </div>
 
-          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
             {[
               {
                 icon: Truck,
@@ -495,8 +436,8 @@ const handleSubcategoryChange = (subcategory: string) => {
               },
               {
                 icon: Shield,
-                title: "Paiement Sécurisé",
-                description: "Transactions 100% sécurisées et cryptées",
+                title: "Qualité Garantie",
+                description: "Produits certifiés et conformes aux normes",
                 gradient: "from-green-500 to-emerald-500"
               },
               {
@@ -504,12 +445,6 @@ const handleSubcategoryChange = (subcategory: string) => {
                 title: "Meilleurs Prix",
                 description: "Prix compétitifs et promotions régulières",
                 gradient: "from-purple-500 to-pink-500"
-              },
-              {
-                icon: Star,
-                title: "Service Premium",
-                description: "Support client disponible 7j/7",
-                gradient: "from-orange-500 to-red-500"
               }
             ].map((feature, index) => {
               const Icon = feature.icon
@@ -537,7 +472,7 @@ const handleSubcategoryChange = (subcategory: string) => {
         </div>
       </section>
 
-      {/* Contact Section - Enhanced */}
+      {/* Contact Section */}
       <section id="contact" className="py-24 bg-white relative overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-br from-green-50/30 to-emerald-50/30"></div>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative">
@@ -546,79 +481,32 @@ const handleSubcategoryChange = (subcategory: string) => {
             <h2 className="text-4xl lg:text-5xl font-bold mb-6 bg-gradient-to-r from-green-700 to-emerald-600 bg-clip-text text-transparent">
               Nous Sommes à Votre Écoute
             </h2>
-            <p className="text-lg text-gray-600 max-w-3xl mx-auto">
-              Une question ? Besoin de conseils ? Notre équipe d'experts est là pour vous aider
+            <p className="text-lg text-gray-600">
+              Une question ? Besoin de conseils ? Notre équipe est là pour vous aider
             </p>
           </div>
 
-          <div className="grid lg:grid-cols-2 gap-12">
-            {/* Contact Form */}
-            <Card className="border-2 border-green-100 shadow-xl hover:shadow-2xl transition-all duration-300">
-              <CardHeader>
-                <CardTitle className="text-2xl">Envoyez-nous un Message</CardTitle>
-                <CardDescription>Nous vous répondrons dans les 24 heures</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <form className="space-y-6">
-                  <div className="grid md:grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">Nom</label>
-                      <Input placeholder="Votre nom" className="border-green-200 focus:border-green-400" />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">Prénom</label>
-                      <Input placeholder="Votre prénom" className="border-green-200 focus:border-green-400" />
-                    </div>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Email</label>
-                    <Input type="email" placeholder="votre@email.com" className="border-green-200 focus:border-green-400" />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Téléphone</label>
-                    <Input placeholder="+216 XX XXX XXX" className="border-green-200 focus:border-green-400" />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Message</label>
-                    <textarea 
-                      rows={5} 
-                      placeholder="Votre message..." 
-                      className="w-full px-4 py-3 border-2 border-green-200 rounded-xl focus:border-green-400 focus:outline-none focus:ring-2 focus:ring-green-200 transition-all"
-                    ></textarea>
-                  </div>
-                  <Button className="w-full bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white shadow-lg hover:shadow-xl transition-all duration-300">
-                    Envoyer le Message
-                  </Button>
-                </form>
-              </CardContent>
-            </Card>
-
-            {/* Contact Info */}
-            <div className="space-y-8">
+          <div className="grid lg:grid-cols-2 gap-8">
+            {/* Contact Info Cards */}
+            <div className="space-y-6">
               {[
                 {
                   icon: MapPin,
                   title: "Adresse",
-                  content: "123 Avenue Habib Bourguiba, Tunis, Tunisie",
+                  content: "Rue El Moez, Grombalia, Tunisia, 8030",
                   gradient: "from-red-500 to-pink-500"
                 },
                 {
                   icon: Phone,
                   title: "Téléphone",
-                  content: "+216 71 XXX XXX",
+                  content: "26 744 525",
                   gradient: "from-green-500 to-emerald-500"
                 },
                 {
                   icon: Mail,
                   title: "Email",
-                  content: "contact@biopharma.tn",
+                  content: "biopharma.tunisie@gmail.com",
                   gradient: "from-blue-500 to-cyan-500"
-                },
-                {
-                  icon: Clock,
-                  title: "Horaires",
-                  content: "Lun - Sam: 8h - 20h | Dim: 9h - 18h",
-                  gradient: "from-purple-500 to-indigo-500"
                 }
               ].map((item, index) => {
                 const Icon = item.icon
@@ -639,59 +527,32 @@ const handleSubcategoryChange = (subcategory: string) => {
                 )
               })}
             </div>
+
+            {/* Google Map */}
+            <div className="h-full min-h-[400px]">
+              <Card className="h-full border-2 border-green-100 overflow-hidden shadow-xl">
+                <CardContent className="p-0 h-full">
+                  <iframe
+                    src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3195.4827829916147!2d10.517659315394!3d36.77777797994!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x12fd0b0e3e3e3e3e%3A0x1234567890abcdef!2sRue%20El%20Moez%2C%20Grombalia!5e0!3m2!1sen!2stn!4v1234567890123"
+                    width="100%"
+                    height="100%"
+                    style={{ border: 0, minHeight: '400px' }}
+                    allowFullScreen
+                    loading="lazy"
+                    referrerPolicy="no-referrer-when-downgrade"
+                    title="BioPharma Location"
+                  ></iframe>
+                </CardContent>
+              </Card>
+            </div>
           </div>
         </div>
       </section>
 
-      {/* Newsletter Section - Enhanced */}
-      <section className="py-20 bg-gradient-to-br from-green-600 via-emerald-600 to-teal-600 relative overflow-hidden">
-        <div className="absolute inset-0 opacity-10">
-          <div className="absolute top-0 left-0 w-96 h-96 bg-white rounded-full blur-3xl"></div>
-          <div className="absolute bottom-0 right-0 w-96 h-96 bg-white rounded-full blur-3xl"></div>
-        </div>
-        
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 relative">
-          <div className="text-center mb-10">
-            <div className="inline-flex items-center justify-center w-20 h-20 bg-white/20 backdrop-blur-sm rounded-2xl mb-6">
-              <Mail className="w-10 h-10 text-white" />
-            </div>
-            <h2 className="text-4xl lg:text-5xl font-bold text-white mb-4">
-              Restez Informé
-            </h2>
-            <p className="text-xl text-green-50">
-              Inscrivez-vous à notre newsletter pour recevoir nos offres exclusives et conseils santé
-            </p>
-          </div>
-
-          <form onSubmit={handleNewsletterSubmit} className="max-w-xl mx-auto">
-            <div className="flex flex-col sm:flex-row gap-4">
-              <Input
-                type="email"
-                placeholder="Votre adresse email"
-                value={newsletterEmail}
-                onChange={(e) => setNewsletterEmail(e.target.value)}
-                className="flex-1 h-14 px-6 bg-white/95 backdrop-blur-sm border-2 border-white/50 focus:border-white rounded-xl text-gray-900 placeholder:text-gray-500"
-                required
-              />
-              <Button 
-                type="submit"
-                disabled={isNewsletterLoading}
-                className="h-14 px-8 bg-white text-green-600 hover:bg-green-50 font-bold rounded-xl shadow-xl hover:shadow-2xl transition-all duration-300"
-              >
-                {isNewsletterLoading ? "Envoi..." : "S'abonner"}
-              </Button>
-            </div>
-            <p className="text-green-50 text-sm mt-4 text-center">
-              En vous inscrivant, vous acceptez de recevoir nos communications marketing
-            </p>
-          </form>
-        </div>
-      </section>
-
-      {/* Footer - Enhanced */}
+      {/* Footer */}
       <footer className="bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 text-white py-16">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-12 mb-12">
+          <div className="grid md:grid-cols-2 gap-12 mb-12">
             <div>
               <div className="flex items-center space-x-3 mb-6">
                 <div className="w-12 h-12 bg-gradient-to-br from-green-600 to-emerald-600 rounded-xl flex items-center justify-center">
@@ -715,34 +576,19 @@ const handleSubcategoryChange = (subcategory: string) => {
               </div>
             </div>
 
-            {[
-              {
-                title: "Navigation",
-                links: ["Accueil", "Produits", "À Propos", "Contact"]
-              },
-              {
-                title: "Informations",
-                links: ["Conditions d'utilisation", "Politique de confidentialité", "Livraison", "Retours"]
-              },
-              {
-                title: "Support",
-                links: ["FAQ", "Service Client", "Suivi de commande", "Garanties"]
-              }
-            ].map((section, index) => (
-              <div key={index}>
-                <h3 className="font-bold text-lg mb-6">{section.title}</h3>
-                <ul className="space-y-3">
-                  {section.links.map((link, linkIndex) => (
-                    <li key={linkIndex}>
-                      <a href="#" className="text-gray-400 hover:text-green-400 transition-colors duration-200 flex items-center group">
-                        <span className="w-0 h-0.5 bg-green-400 group-hover:w-4 mr-0 group-hover:mr-2 transition-all duration-200"></span>
-                        {link}
-                      </a>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            ))}
+            <div>
+              <h3 className="font-bold text-lg mb-6">Navigation</h3>
+              <ul className="space-y-3">
+                {["Accueil", "Produits", "À Propos", "Contact"].map((link, linkIndex) => (
+                  <li key={linkIndex}>
+                    <a href="#" className="text-gray-400 hover:text-green-400 transition-colors duration-200 flex items-center group">
+                      <span className="w-0 h-0.5 bg-green-400 group-hover:w-4 mr-0 group-hover:mr-2 transition-all duration-200"></span>
+                      {link}
+                    </a>
+                  </li>
+                ))}
+              </ul>
+            </div>
           </div>
 
           <div className="border-t border-gray-800 pt-8">
@@ -752,8 +598,6 @@ const handleSubcategoryChange = (subcategory: string) => {
               </p>
               <div className="flex items-center space-x-6 text-sm text-gray-400">
                 <a href="#" className="hover:text-green-400 transition-colors">Mentions légales</a>
-                <span>•</span>
-                <a href="#" className="hover:text-green-400 transition-colors">CGV</a>
                 <span>•</span>
                 <a href="#" className="hover:text-green-400 transition-colors">Plan du site</a>
               </div>

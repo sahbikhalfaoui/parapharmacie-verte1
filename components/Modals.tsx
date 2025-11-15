@@ -156,7 +156,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
     setError("")
 
     try {
-      const res = await fetch('http://localhost:5000/api/auth/google', {
+      const res = await fetch('https://biopharma-backend.onrender.com/api/auth/google', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ credential: response.credential }),
@@ -190,7 +190,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
     }
 
     try {
-      const endpoint = `http://localhost:5000/api/auth/${mode === 'login' ? 'login' : 'register'}`
+      const endpoint = `https://biopharma-backend.onrender.com/api/auth/${mode === 'login' ? 'login' : 'register'}`
       const payload = mode === 'login' 
         ? { email: formData.email, password: formData.password }
         : formData
@@ -537,7 +537,7 @@ export const CartSheet: React.FC<CartSheetProps> = ({
         paymentMethod: 'COD'
       }
 
-      const response = await fetch('http://localhost:5000/api/orders', {
+      const response = await fetch('https://biopharma-backend.onrender.com/api/orders', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -608,7 +608,7 @@ export const CartSheet: React.FC<CartSheetProps> = ({
                       <Card key={item._id} className="p-4 border-2 border-gray-100 hover:border-green-200 transition-colors">
                         <div className="flex items-center space-x-4">
                           <img 
-                            src={item.image ? `http://localhost:5000${item.image}` : "https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?w=100&h=100&fit=crop"} 
+                            src={item.image ? `https://biopharma-backend.onrender.com${item.image}` : "https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?w=100&h=100&fit=crop"} 
                             alt={item.name} 
                             className="w-16 h-16 object-cover rounded-lg border border-gray-200" 
                           />
@@ -697,7 +697,7 @@ export const CartSheet: React.FC<CartSheetProps> = ({
                   {cartItems.map(item => (
                     <div key={item._id} className="flex items-center space-x-3 p-3 bg-gray-50 rounded-lg border border-gray-200">
                       <img 
-                        src={item.image ? `http://localhost:5000${item.image}` : "https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?w=48&h=48&fit=crop"} 
+                        src={item.image ? `https://biopharma-backend.onrender.com${item.image}` : "https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?w=48&h=48&fit=crop"} 
                         alt={item.name} 
                         className="w-12 h-12 object-cover rounded border border-gray-200" 
                       />

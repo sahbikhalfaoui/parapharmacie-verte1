@@ -395,7 +395,7 @@ export default function AdminDashboard() {
                   <div className="flex items-center space-x-3">
                     {product.image && (
                       <img 
-                        src={`http://localhost:5000${product.image}`} 
+                        src={product.image}
                         alt={product.name}
                         className="h-10 w-10 object-cover rounded"
                         onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }}
@@ -453,7 +453,7 @@ export default function AdminDashboard() {
                     <td className="p-4">
                       {product.image ? (
                         <img 
-                          src={`http://localhost:5000${product.image}`} 
+                          src={product.image}
                           alt={product.name}
                           className="h-12 w-12 object-cover rounded"
                           onError={(e) => { (e.target as HTMLImageElement).src = '/placeholder-image.png' }}
@@ -580,7 +580,7 @@ export default function AdminDashboard() {
                   <div className="flex items-center space-x-3">
                     {category.image ? (
                       <img 
-                        src={`http://localhost:5000${category.image}`} 
+                        src={category.image}
                         alt={category.name}
                         className="h-10 w-10 object-cover rounded"
                         onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }}
@@ -640,7 +640,7 @@ export default function AdminDashboard() {
                   <div className="flex items-center space-x-3">
                     {subCategory.image ? (
                       <img 
-                        src={`http://localhost:5000${subCategory.image}`} 
+                        src={subCategory.image}
                         alt={subCategory.name}
                         className="h-10 w-10 object-cover rounded"
                         onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }}

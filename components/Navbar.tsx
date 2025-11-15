@@ -1,5 +1,3 @@
-// Copy this entire file to: components/Navbar.tsx
-
 "use client"
 import React, { useState, useEffect, useRef } from "react"
 import { Button } from "@/components/ui/button"
@@ -134,8 +132,8 @@ const Navbar: React.FC<NavbarProps> = ({
   const loadPopularItems = async () => {
     try {
       const [productsRes, categoriesRes] = await Promise.all([
-        fetch('http://localhost:5000/api/products?limit=8&sortBy=rating&sortOrder=desc'),
-        fetch('http://localhost:5000/api/categories')
+        fetch('https://biopharma-backend.onrender.com/api/products?limit=8&sortBy=rating&sortOrder=desc'),
+        fetch('https://biopharma-backend.onrender.com/api/categories')
       ])
 
       if (productsRes.ok && categoriesRes.ok) {
@@ -167,8 +165,8 @@ const Navbar: React.FC<NavbarProps> = ({
     setIsSearching(true)
     try {
       const [productsRes, categoriesRes] = await Promise.all([
-        fetch(`http://localhost:5000/api/products?search=${encodeURIComponent(query)}&limit=8`),
-        fetch('http://localhost:5000/api/categories')
+        fetch(`https://biopharma-backend.onrender.com/api/products?search=${encodeURIComponent(query)}&limit=8`),
+        fetch('https://biopharma-backend.onrender.com/api/categories')
       ])
 
       if (!productsRes.ok || !categoriesRes.ok) {
@@ -253,11 +251,11 @@ const Navbar: React.FC<NavbarProps> = ({
             <div className="flex items-center space-x-6 text-gray-700">
               <div className="flex items-center space-x-2 hover:text-green-600 transition-colors cursor-pointer">
                 <Phone className="w-3 h-3" />
-                <span className="hidden sm:inline">+216 XX XXX XXX</span>
+                <span className="hidden sm:inline">+216 26 744 525</span>
               </div>
               <div className="flex items-center space-x-2 hover:text-green-600 transition-colors cursor-pointer">
                 <MapPin className="w-3 h-3" />
-                <span className="hidden md:inline">Tunis, Tunisie</span>
+                <span className="hidden md:inline">Rue El Moez, Grombalia, Tunisia, 8030</span>
               </div>
               <div className="flex items-center space-x-2 hover:text-green-600 transition-colors cursor-pointer">
                 <Clock3 className="w-3 h-3" />
@@ -338,13 +336,15 @@ const Navbar: React.FC<NavbarProps> = ({
 
                 {showSearchResults && (
                   <div 
-                    className="fixed left-0 right-0 top-[128px] mx-auto bg-white rounded-2xl shadow-2xl border border-green-100 overflow-hidden z-50 animate-in fade-in slide-in-from-top-2 duration-300"
+                    className="fixed left-0 right-0 bg-white rounded-2xl shadow-2xl border border-green-100 overflow-hidden z-[100] animate-in fade-in slide-in-from-top-2 duration-300"
                     style={{ 
                       width: 'calc(100% - 2rem)',
                       maxWidth: '1280px',
                       maxHeight: '80vh',
+                      top: '100%',
                       left: '50%',
-                      transform: 'translateX(-50%)'
+                      transform: 'translateX(-50%)',
+                      marginTop: '8px'
                     }}
                   >
                     <div className="overflow-y-auto max-h-[80vh]">
@@ -432,9 +432,12 @@ const Navbar: React.FC<NavbarProps> = ({
                                 >
                                   <div className="relative w-20 h-20 bg-gradient-to-br from-gray-100 to-gray-200 rounded-xl overflow-hidden flex-shrink-0 border-2 border-gray-200 group-hover:border-green-300 transition-colors">
                                     <img 
-                                      src={product.image ? `http://localhost:5000${product.image}` : "/placeholder-product.jpg"} 
+                                      src={product.image || "/placeholder-product.jpg"} 
                                       alt={product.name}
                                       className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
+                                      onError={(e) => {
+                                        e.currentTarget.src = "/placeholder-product.jpg"
+                                      }}
                                     />
                                   </div>
                                   <div className="flex-1 min-w-0">
@@ -445,7 +448,7 @@ const Navbar: React.FC<NavbarProps> = ({
                                       <Badge variant="secondary" className="text-xs bg-green-100 text-green-700 font-medium">
                                         {product.categoryName}
                                       </Badge>
-                                      {product.rating > 0 && (
+                                      {product.rating && product.rating > 0 && (
                                         <div className="flex items-center space-x-1">
                                           <Star className="w-3 h-3 fill-yellow-400 text-yellow-400" />
                                           <span className="text-xs font-medium text-gray-600">{product.rating.toFixed(1)}</span>
@@ -644,7 +647,7 @@ const Navbar: React.FC<NavbarProps> = ({
 
       {/* Categories Bar with Mega Menu */}
       <div 
-        className={`bg-gradient-to-r from-green-700 via-green-600 to-green-700 shadow-lg transition-all duration-500 sticky z-50 ${
+        className={`bg-gradient-to-r from-green-700 via-green-600 to-green-700 shadow-lg transition-all duration-500 sticky z-40 ${
           scrolled 
             ? 'top-[80px] opacity-0 -translate-y-full pointer-events-none' 
             : 'top-[80px] opacity-100 translate-y-0'
@@ -784,7 +787,7 @@ const Navbar: React.FC<NavbarProps> = ({
                             {category.name}
                           </h3>
                           {category.description && (
-                            <p className="text-gray-600 text-sm">{category.description}</p>
+                            <p className="text-gray-600 text-sm">{category.description}</p>     
                           )}
                           <div className="mt-2 flex items-center space-x-2">
                             <span className="text-xs font-semibold text-green-600 bg-green-50 px-3 py-1 rounded-full">

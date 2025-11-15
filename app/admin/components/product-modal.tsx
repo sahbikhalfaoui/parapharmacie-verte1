@@ -65,10 +65,11 @@ export const ProductModal: React.FC<ProductModalProps> = ({
         stockQuantity: product.stockQuantity || 100,
         inStock: product.inStock !== false
       })
+      // Fixed: Use Cloudinary URLs directly without localhost prefix
       if (product.gallery && product.gallery.length > 0) {
-        setImagePreview(product.gallery.map(img => `http://localhost:5000${img}`))
+        setImagePreview(product.gallery.map(img => img))
       } else if (product.image) {
-        setImagePreview([`http://localhost:5000${product.image}`])
+        setImagePreview([product.image])
       }
     } else {
       setFormData({
@@ -177,6 +178,9 @@ export const ProductModal: React.FC<ProductModalProps> = ({
                       src={preview}
                       alt={`Preview ${index + 1}`}
                       className="h-24 w-24 object-cover rounded-lg border"
+                      onError={(e) => {
+                        e.currentTarget.src = "/placeholder.jpg"
+                      }}
                     />
                   </div>
                 ))}
