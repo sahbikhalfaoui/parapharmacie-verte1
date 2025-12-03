@@ -67,13 +67,27 @@ declare global {
   }
 }
 
+// Helper function to get correct image URL
+const getImageUrl = (imagePath?: string): string => {
+  if (!imagePath) return "/placeholder.jpg"
+  
+  // If imagePath is already a full URL, return it
+  if (imagePath.startsWith('http')) {
+    return imagePath
+  }
+  
+  // If imagePath starts with /uploads or similar, construct the full URL
+  if (imagePath.startsWith('/')) {
+    return `https://biopharma-backend.onrender.com${imagePath}`
+  }
+  
+  // Default to placeholder
+  return "/placeholder.jpg"
+}
+
 // ==================== AUTH MODAL ====================
 export const AuthModal: React.FC<AuthModalProps> = ({ 
-  isOpen, 
-  onClose, 
-  mode, 
-  onSwitchMode, 
-  onAuthSuccess 
+  isOpen, onClose, mode, onSwitchMode, onAuthSuccess 
 }) => {
   const [formData, setFormData] = useState({
     email: "",
@@ -169,7 +183,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
       localStorage.setItem('authToken', data.token)
       localStorage.setItem('userData', JSON.stringify(data.user))
       onAuthSuccess(data.user)
-      alert('Connexion Google réussie !')
+   
       handleClose()
     } catch (err) {
       setError((err as Error).message)
@@ -549,7 +563,7 @@ export const CartSheet: React.FC<CartSheetProps> = ({
       const data = await response.json()
       if (!response.ok) throw new Error(data.error || 'Order failed')
 
-      alert('Commande passée avec succès ! Nous vous contacterons bientôt.')
+      
       clearCart()
       setShowCheckout(false)
       setOrderForm({ fullName: '', phone: '', email: '', address: '', city: '', notes: '' })
@@ -608,9 +622,12 @@ export const CartSheet: React.FC<CartSheetProps> = ({
                       <Card key={item._id} className="p-4 border-2 border-gray-100 hover:border-green-200 transition-colors">
                         <div className="flex items-center space-x-4">
                           <img 
-                            src={item.image ? `https://biopharma-backend.onrender.com${item.image}` : "https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?w=100&h=100&fit=crop"} 
+                            src={getImageUrl(item.image)} 
                             alt={item.name} 
-                            className="w-16 h-16 object-cover rounded-lg border border-gray-200" 
+                            className="w-16 h-16 object-cover rounded-lg border border-gray-200"
+                            onError={(e) => {
+                              e.currentTarget.src = "/placeholder.jpg"
+                            }}
                           />
                           <div className="flex-1 min-w-0">
                             <h4 className="font-semibold text-sm truncate text-gray-900">{item.name}</h4>
@@ -697,9 +714,12 @@ export const CartSheet: React.FC<CartSheetProps> = ({
                   {cartItems.map(item => (
                     <div key={item._id} className="flex items-center space-x-3 p-3 bg-gray-50 rounded-lg border border-gray-200">
                       <img 
-                        src={item.image ? `https://biopharma-backend.onrender.com${item.image}` : "https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?w=48&h=48&fit=crop"} 
+                        src={getImageUrl(item.image)} 
                         alt={item.name} 
-                        className="w-12 h-12 object-cover rounded border border-gray-200" 
+                        className="w-12 h-12 object-cover rounded border border-gray-200"
+                        onError={(e) => {
+                          e.currentTarget.src = "/placeholder.jpg"
+                        }}
                       />
                       <div className="flex-1 min-w-0">
                         <p className="font-medium text-sm truncate text-gray-900">{item.name}</p>

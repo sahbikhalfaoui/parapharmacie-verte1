@@ -70,7 +70,7 @@ interface ProductsSectionProps {
   sortBy: string
   sortOrder: "asc" | "desc"
   currentPage: number
-  itemsPerPage: number
+  itemsPerPage?: number
   minRating: number
   onCategoryChange: (category: string) => void
   onSubcategoryChange: (subcategory: string) => void
@@ -81,14 +81,25 @@ interface ProductsSectionProps {
   onMinRatingChange: (rating: number) => void
   onCurrentPageChange: (page: number) => void
   user: User | null
+  favorites: Set<string>
+  onToggleFavorite: (productId: string) => void
+  showToast: (message: string, type: "success" | "error" | "warning" | "info", duration?: number) => string
+  showConfirm: (
+    title: string,
+    message: string,
+    type?: "danger" | "success" | "warning" | "info",
+    confirmText?: string,
+    cancelText?: string
+  ) => Promise<boolean>
 }
 
 // Review Form Component
-const ReviewForm = ({ productId, user, onReviewSubmit, onCancel }: {
+const ReviewForm = ({ productId, user, onReviewSubmit, onCancel, showToast }: {
   productId: string
   user: User | null
   onReviewSubmit: () => void
   onCancel: () => void
+  showToast: ProductsSectionProps['showToast']
 }) => {
   const [rating, setRating] = useState(0)
   const [title, setTitle] = useState("")
@@ -97,7 +108,10 @@ const ReviewForm = ({ productId, user, onReviewSubmit, onCancel }: {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!user || !rating || !title || !comment) return
+    if (!user || !rating || !title || !comment) {
+      showToast("Veuillez remplir tous les champs", "warning")
+      return
+    }
 
     setIsSubmitting(true)
     try {
@@ -112,16 +126,17 @@ const ReviewForm = ({ productId, user, onReviewSubmit, onCancel }: {
       })
 
       if (response.ok) {
+        showToast("Votre avis a été soumis avec succès !", "success")
         onReviewSubmit()
         setRating(0)
         setTitle("")
         setComment("")
       } else {
         const errorData = await response.json()
-        alert('Erreur: ' + (errorData.error || 'Erreur inconnue'))
+        showToast(`Erreur: ${errorData.error || 'Erreur inconnue'}`, "error")
       }
     } catch (error) {
-      alert('Erreur lors de l\'envoi de l\'avis')
+      showToast("Erreur lors de l'envoi de l'avis", "error")
     } finally {
       setIsSubmitting(false)
     }
@@ -234,12 +249,13 @@ const ReviewItem = ({ review }: { review: Review }) => {
 }
 
 // Product Detail Modal
-const ProductDetailModal = ({ product, isOpen, onClose, onAddToCart, user }: {
+const ProductDetailModal = ({ product, isOpen, onClose, onAddToCart, user, showToast }: {
   product: Product | null
   isOpen: boolean
   onClose: () => void
   onAddToCart: (product: Product) => void
   user: User | null
+  showToast: ProductsSectionProps['showToast']
 }) => {
   const [quantity, setQuantity] = useState(1)
   const [activeTab, setActiveTab] = useState('description')
@@ -264,6 +280,7 @@ const ProductDetailModal = ({ product, isOpen, onClose, onAddToCart, user }: {
       setReviews(data.reviews || [])
     } catch (error) {
       console.error('Error loading reviews:', error)
+      showToast("Erreur lors du chargement des avis", "error")
     } finally {
       setReviewsLoading(false)
     }
@@ -439,6 +456,7 @@ const ProductDetailModal = ({ product, isOpen, onClose, onAddToCart, user }: {
                           loadReviews()
                         }}
                         onCancel={() => setShowReviewForm(false)}
+                        showToast={showToast}
                       />
                     )}
                     
@@ -482,7 +500,7 @@ const ProductsSection: React.FC<ProductsSectionProps> = ({
   sortBy,
   sortOrder,
   currentPage,
-  itemsPerPage = 20,
+  itemsPerPage = 15,
   minRating,
   onCategoryChange,
   onSubcategoryChange,
@@ -492,12 +510,15 @@ const ProductsSection: React.FC<ProductsSectionProps> = ({
   onPriceRangeChange,
   onMinRatingChange,
   onCurrentPageChange,
-  user
+  user,
+  favorites,
+  onToggleFavorite,
+  showToast,
+  showConfirm
 }) => {
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid')
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null)
   const [isModalOpen, setIsModalOpen] = useState(false)
-  const [favorites, setFavorites] = useState<Set<string>>(new Set())
   const [hoveredCategory, setHoveredCategory] = useState<string | null>(null)
 
   const getSubcategoriesForCategory = (categoryName: string) => {
@@ -571,17 +592,6 @@ const ProductsSection: React.FC<ProductsSectionProps> = ({
   const totalPages = Math.ceil(sortedProducts.length / itemsPerPage)
   const startIndex = (currentPage - 1) * itemsPerPage
   const paginatedProducts = sortedProducts.slice(startIndex, startIndex + itemsPerPage)
-
-  const toggleFavorite = (productId: string, e: React.MouseEvent) => {
-    e.stopPropagation()
-    const newFavorites = new Set(favorites)
-    if (newFavorites.has(productId)) {
-      newFavorites.delete(productId)
-    } else {
-      newFavorites.add(productId)
-    }
-    setFavorites(newFavorites)
-  }
 
   const handleSubcategorySelect = (category: string, subcategory: string) => {
     setTimeout(() => {
@@ -890,7 +900,10 @@ const ProductsSection: React.FC<ProductsSectionProps> = ({
                     )}
                     
                     <button
-                      onClick={(e) => toggleFavorite(product._id, e)}
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        onToggleFavorite(product._id)
+                      }}
                       className={`absolute top-2 right-2 z-10 p-1.5 rounded-full backdrop-blur-sm transition-all ${
                         favorites.has(product._id)
                           ? 'bg-red-100 text-red-600'
@@ -1093,8 +1106,12 @@ const ProductsSection: React.FC<ProductsSectionProps> = ({
           setIsModalOpen(false)
           setSelectedProduct(null)
         }}
-        onAddToCart={onAddToCart}
+        onAddToCart={(product) => {
+          onAddToCart(product)
+          showToast(`${product.name} ajouté au panier`, "success")
+        }}
         user={user}
+        showToast={showToast}
       />
     </>
   )

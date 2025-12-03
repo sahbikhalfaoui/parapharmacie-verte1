@@ -90,7 +90,9 @@ const Navbar: React.FC<NavbarProps> = ({
   const [isInitialLoad, setIsInitialLoad] = useState(true)
   const [scrolled, setScrolled] = useState(false)
   const [hoveredCategory, setHoveredCategory] = useState<string | null>(null)
+  const [isMobileCategoriesOpen, setIsMobileCategoriesOpen] = useState(false)
   const searchRef = useRef<HTMLDivElement>(null)
+  const mobileMenuRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     const handleScroll = () => {
@@ -109,11 +111,14 @@ const Navbar: React.FC<NavbarProps> = ({
       if (searchRef.current && !searchRef.current.contains(event.target as Node)) {
         setShowSearchResults(false)
       }
+      if (mobileMenuRef.current && !mobileMenuRef.current.contains(event.target as Node) && isMenuOpen) {
+        setIsMenuOpen(false)
+      }
     }
 
     document.addEventListener('mousedown', handleClickOutside)
     return () => document.removeEventListener('mousedown', handleClickOutside)
-  }, [])
+  }, [isMenuOpen])
 
   useEffect(() => {
     const delayDebounceFn = setTimeout(() => {
@@ -208,6 +213,7 @@ const Navbar: React.FC<NavbarProps> = ({
   const handleProductClick = (productId: string) => {
     setShowSearchResults(false)
     setSearchTerm("")
+    setIsMenuOpen(false)
     const productsSection = document.getElementById('produits')
     if (productsSection) {
       productsSection.scrollIntoView({ behavior: 'smooth' })
@@ -218,6 +224,8 @@ const Navbar: React.FC<NavbarProps> = ({
     setShowSearchResults(false)
     setSearchTerm("")
     setHoveredCategory(null)
+    setIsMenuOpen(false)
+    setIsMobileCategoriesOpen(false)
     
     if (onCategorySelect) {
       onCategorySelect(categoryName, subcategoryName)
@@ -244,27 +252,27 @@ const Navbar: React.FC<NavbarProps> = ({
 
   return (
     <>
-      {/* Top Info Bar */}
+      {/* Top Info Bar - Mobile Optimized */}
       <div className="bg-green-50 border-b border-green-100">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-10 text-sm">
-            <div className="flex items-center space-x-6 text-gray-700">
-              <div className="flex items-center space-x-2 hover:text-green-600 transition-colors cursor-pointer">
-                <Phone className="w-3 h-3" />
-                <span className="hidden sm:inline">+216 26 744 525</span>
+        <div className="max-w-7xl mx-auto px-3 sm:px-4 lg:px-8">
+          <div className="flex items-center justify-between h-10 text-xs sm:text-sm">
+            <div className="flex items-center space-x-3 sm:space-x-4 md:space-x-6 text-gray-700 overflow-x-auto scrollbar-hide">
+              <div className="flex items-center space-x-1 sm:space-x-2 hover:text-green-600 transition-colors cursor-pointer flex-shrink-0">
+                <Phone className="w-3 h-3 sm:w-4 sm:h-4" />
+                <span className="text-xs sm:text-sm">+216 26 744 525</span>
               </div>
-              <div className="flex items-center space-x-2 hover:text-green-600 transition-colors cursor-pointer">
-                <MapPin className="w-3 h-3" />
-                <span className="hidden md:inline">Rue El Moez, Grombalia, Tunisia, 8030</span>
+              <div className="hidden xs:flex items-center space-x-1 sm:space-x-2 hover:text-green-600 transition-colors cursor-pointer flex-shrink-0">
+                <MapPin className="w-3 h-3 sm:w-4 sm:h-4" />
+                <span className="text-xs sm:text-sm">Grombalia, Tunisia</span>
               </div>
-              <div className="flex items-center space-x-2 hover:text-green-600 transition-colors cursor-pointer">
-                <Clock3 className="w-3 h-3" />
-                <span className="hidden lg:inline">Lun-Sam: 8h-20h</span>
+              <div className="hidden sm:flex items-center space-x-1 sm:space-x-2 hover:text-green-600 transition-colors cursor-pointer flex-shrink-0">
+                <Clock3 className="w-3 h-3 sm:w-4 sm:h-4" />
+                <span className="text-xs sm:text-sm">Lun-Sam: 8h-20h</span>
               </div>
             </div>
-            <div className="text-green-700 font-medium hidden md:flex items-center space-x-2 animate-pulse">
+            <div className="text-green-700 font-medium hidden xs:flex items-center space-x-1 sm:space-x-2 animate-pulse flex-shrink-0">
               <span>✅</span>
-              <span>Livraison gratuite dès 150 TND</span>
+              <span className="text-xs sm:text-sm">Livraison gratuite</span>
             </div>
           </div>
         </div>
@@ -275,28 +283,32 @@ const Navbar: React.FC<NavbarProps> = ({
         scrolled 
           ? 'bg-white shadow-xl border-b border-green-200' 
           : 'bg-white/95 backdrop-blur-md border-b border-green-100 shadow-lg'
-      }`}>
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-20">
-            <div 
-              className="flex items-center space-x-3 cursor-pointer group" 
-              onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
-            >
-              <div className="w-18 h-18 rounded-xl flex items-center justify-center shadow-lg transform group-hover:scale-110 transition-all duration-300">
-                <img 
-                  src="/logo-icon_vff.png" 
-                  alt="BioPharma Logo" 
-                  className="w-full h-full object-contain"
-                />
-              </div>
-              <div className="hidden sm:block">
-                <span className="text-2xl font-bold bg-gradient-to-r from-green-700 via-emerald-600 to-green-600 bg-clip-text text-transparent">
-                  BioPharma 
-                </span>
-                <p className="text-xs text-gray-500 -mt-1 group-hover:text-green-600 transition-colors">Votre santé, notre priorité</p>
+      }`} ref={mobileMenuRef}>
+        <div className="max-w-7xl mx-auto px-3 sm:px-4 lg:px-8">
+          <div className="flex justify-between items-center h-16 sm:h-20">
+            {/* Logo Section */}
+            <div className="flex items-center">
+              <div 
+                className="flex items-center space-x-2 sm:space-x-3 cursor-pointer group" 
+                onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+              >
+                <div className="w-12 h-12 sm:w-16 sm:h-16 rounded-xl flex items-center justify-center shadow-lg transform group-hover:scale-110 transition-all duration-300">
+                  <img 
+                    src="/logo-icon_vff.png" 
+                    alt="BioPharma Logo" 
+                    className="w-full h-full object-contain"
+                  />
+                </div>
+                <div className="hidden sm:block">
+                  <span className="text-xl sm:text-2xl font-bold bg-gradient-to-r from-green-700 via-emerald-600 to-green-600 bg-clip-text text-transparent">
+                    BioPharma 
+                  </span>
+                  <p className="text-xs text-gray-500 -mt-1 group-hover:text-green-600 transition-colors">Votre santé, notre priorité</p>
+                </div>
               </div>
             </div>
 
+            {/* Desktop Navigation Links - Hidden on Mobile */}
             <div className="hidden lg:flex items-center space-x-1">
               {[
                 { name: "Accueil", href: "#accueil" },
@@ -307,7 +319,7 @@ const Navbar: React.FC<NavbarProps> = ({
                 <a 
                   key={item.name} 
                   href={item.href} 
-                  className="px-4 py-2 text-gray-700 hover:text-green-600 transition-all duration-300 font-medium relative group rounded-lg hover:bg-green-50"
+                  className="px-3 py-2 text-sm text-gray-700 hover:text-green-600 transition-all duration-300 font-medium relative group rounded-lg hover:bg-green-50"
                 >
                   {item.name}
                   <span className="absolute bottom-1 left-1/2 transform -translate-x-1/2 w-0 h-0.5 bg-gradient-to-r from-green-600 to-emerald-600 group-hover:w-3/4 transition-all duration-300"></span>
@@ -315,53 +327,53 @@ const Navbar: React.FC<NavbarProps> = ({
               ))}
             </div>
 
-            <div className="hidden md:block flex-1 max-w-2xl mx-8">
+            {/* Search Bar - Hidden on Mobile */}
+            <div className="hidden md:block flex-1 max-w-2xl mx-4 lg:mx-8">
               <div className="relative" ref={searchRef}>
                 <div className="relative">
-                  <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400 transition-colors duration-200 peer-focus:text-green-600" />
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 sm:h-5 sm:w-5 text-gray-400 transition-colors duration-200 peer-focus:text-green-600" />
                   <Input
                     type="text"
-                    placeholder="Rechercher parmi nos produits et catégories..."
+                    placeholder="Rechercher produits..."
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
                     onFocus={() => setShowSearchResults(true)}
-                    className="peer pl-12 pr-4 h-12 border-2 border-green-100 focus:border-green-400 focus:ring-4 focus:ring-green-100 rounded-xl bg-gray-50 focus:bg-white transition-all duration-300 shadow-sm hover:shadow-md focus:shadow-lg text-sm"
+                    className="peer pl-10 pr-4 h-10 sm:h-12 text-sm sm:text-base border-2 border-green-100 focus:border-green-400 focus:ring-2 sm:focus:ring-4 focus:ring-green-100 rounded-xl bg-gray-50 focus:bg-white transition-all duration-300 shadow-sm hover:shadow-md focus:shadow-lg"
                   />
                   {isSearching && (
-                    <div className="absolute right-4 top-1/2 transform -translate-y-1/2">
-                      <div className="animate-spin rounded-full h-5 w-5 border-2 border-green-600 border-t-transparent"></div>
+                    <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
+                      <div className="animate-spin rounded-full h-4 w-4 sm:h-5 sm:w-5 border-2 border-green-600 border-t-transparent"></div>
                     </div>
                   )}
                 </div>
 
+                {/* Search Results Dropdown */}
                 {showSearchResults && (
                   <div 
-                    className="fixed left-0 right-0 bg-white rounded-2xl shadow-2xl border border-green-100 overflow-hidden z-[100] animate-in fade-in slide-in-from-top-2 duration-300"
+                    className="fixed left-2 right-2 sm:left-4 sm:right-4 lg:left-1/2 lg:right-auto lg:-translate-x-1/2 bg-white rounded-2xl shadow-2xl border border-green-100 overflow-hidden z-[100] animate-in fade-in slide-in-from-top-2 duration-300"
                     style={{ 
-                      width: 'calc(100% - 2rem)',
+                      width: 'calc(100% - 1rem)',
                       maxWidth: '1280px',
                       maxHeight: '80vh',
-                      top: '100%',
-                      left: '50%',
-                      transform: 'translateX(-50%)',
-                      marginTop: '8px'
+                      top: 'calc(100% + 8px)',
                     }}
                   >
                     <div className="overflow-y-auto max-h-[80vh]">
-                      <div className="bg-gradient-to-r from-green-600 via-emerald-600 to-green-700 p-6 text-white">
+                      {/* Rest of search results dropdown remains same */}
+                      <div className="bg-gradient-to-r from-green-600 via-emerald-600 to-green-700 p-4 sm:p-6 text-white">
                         <div className="flex items-center justify-between">
-                          <div className="flex items-center space-x-3">
+                          <div className="flex items-center space-x-2 sm:space-x-3">
                             {isInitialLoad ? (
                               <div>
-                                <h3 className="text-lg font-bold">Découvrez nos produits</h3>
-                                <p className="text-sm text-green-50 mt-0.5">Explorez notre sélection populaire</p>
+                                <h3 className="text-base sm:text-lg font-bold">Découvrez nos produits</h3>
+                                <p className="text-xs sm:text-sm text-green-50 mt-0.5">Explorez notre sélection populaire</p>
                               </div>
                             ) : (
                               <>
-                                <Search className="w-6 h-6" />
+                                <Search className="w-5 h-5 sm:w-6 sm:h-6" />
                                 <div>
-                                  <h3 className="text-lg font-bold">Résultats de recherche</h3>
-                                  <p className="text-sm text-green-50 mt-0.5">
+                                  <h3 className="text-base sm:text-lg font-bold">Résultats de recherche</h3>
+                                  <p className="text-xs sm:text-sm text-green-50 mt-0.5">
                                     {displayProducts.length + displayCategories.length} résultats pour "{searchTerm}"
                                   </p>
                                 </div>
@@ -370,19 +382,19 @@ const Navbar: React.FC<NavbarProps> = ({
                           </div>
                           <button
                             onClick={() => setShowSearchResults(false)}
-                            className="p-2 hover:bg-white/20 rounded-lg transition-colors"
+                            className="p-1 sm:p-2 hover:bg-white/20 rounded-lg transition-colors"
                           >
-                            <X className="w-5 h-5" />
+                            <X className="w-4 h-4 sm:w-5 sm:h-5" />
                           </button>
                         </div>
                       </div>
 
-                      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 p-6">
+                      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6 p-4 sm:p-6">
                         {displayCategories.length > 0 && (
                           <div className="lg:col-span-1">
-                            <div className="flex items-center space-x-2 mb-4">
-                              <Package className="w-5 h-5 text-green-600" />
-                              <h4 className="text-sm font-bold text-gray-900 uppercase tracking-wide">
+                            <div className="flex items-center space-x-2 mb-3 sm:mb-4">
+                              <Package className="w-4 h-4 sm:w-5 sm:h-5 text-green-600" />
+                              <h4 className="text-xs sm:text-sm font-bold text-gray-900 uppercase tracking-wide">
                                 {isInitialLoad ? 'Catégories Populaires' : 'Catégories'}
                               </h4>
                             </div>
@@ -391,17 +403,17 @@ const Navbar: React.FC<NavbarProps> = ({
                                 <button
                                   key={category._id}
                                   onClick={() => handleCategoryClick(category.name)}
-                                  className="w-full flex items-center justify-between p-4 hover:bg-gradient-to-r hover:from-green-50 hover:to-emerald-50 rounded-xl transition-all duration-200 group border border-gray-100 hover:border-green-200 hover:shadow-md"
+                                  className="w-full flex items-center justify-between p-3 sm:p-4 hover:bg-gradient-to-r hover:from-green-50 hover:to-emerald-50 rounded-xl transition-all duration-200 group border border-gray-100 hover:border-green-200 hover:shadow-md"
                                 >
-                                  <div className="flex items-center space-x-3">
-                                    <div className="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center group-hover:bg-green-200 transition-colors">
-                                      <Tag className="w-5 h-5 text-green-600" />
+                                  <div className="flex items-center space-x-2 sm:space-x-3">
+                                    <div className="w-8 h-8 sm:w-10 sm:h-10 bg-green-100 rounded-lg flex items-center justify-center group-hover:bg-green-200 transition-colors">
+                                      <Tag className="w-4 h-4 sm:w-5 sm:h-5 text-green-600" />
                                     </div>
-                                    <span className="text-sm font-semibold text-gray-700 group-hover:text-green-600 transition-colors">
+                                    <span className="text-xs sm:text-sm font-semibold text-gray-700 group-hover:text-green-600 transition-colors">
                                       {category.name}
                                     </span>
                                   </div>
-                                  <ChevronRight className="w-5 h-5 text-gray-400 group-hover:text-green-600 transform group-hover:translate-x-1 transition-all" />
+                                  <ChevronRight className="w-4 h-4 sm:w-5 sm:h-5 text-gray-400 group-hover:text-green-600 transform group-hover:translate-x-1 transition-all" />
                                 </button>
                               ))}
                             </div>
@@ -410,27 +422,27 @@ const Navbar: React.FC<NavbarProps> = ({
 
                         {displayProducts.length > 0 && (
                           <div className={displayCategories.length > 0 ? "lg:col-span-2" : "lg:col-span-3"}>
-                            <div className="flex items-center space-x-2 mb-4">
+                            <div className="flex items-center space-x-2 mb-3 sm:mb-4">
                               {isInitialLoad ? (
                                 <>
-                                  <TrendingUp className="w-5 h-5 text-green-600" />
-                                  <h4 className="text-sm font-bold text-gray-900 uppercase tracking-wide">Produits Populaires</h4>
+                                  <TrendingUp className="w-4 h-4 sm:w-5 sm:h-5 text-green-600" />
+                                  <h4 className="text-xs sm:text-sm font-bold text-gray-900 uppercase tracking-wide">Produits Populaires</h4>
                                 </>
                               ) : (
                                 <>
-                                  <Clock className="w-5 h-5 text-green-600" />
-                                  <h4 className="text-sm font-bold text-gray-900 uppercase tracking-wide">Produits Trouvés</h4>
+                                  <Clock className="w-4 h-4 sm:w-5 sm:h-5 text-green-600" />
+                                  <h4 className="text-xs sm:text-sm font-bold text-gray-900 uppercase tracking-wide">Produits Trouvés</h4>
                                 </>
                               )}
                             </div>
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                               {displayProducts.map((product) => (
                                 <button
                                   key={product._id}
                                   onClick={() => handleProductClick(product._id)}
-                                  className="flex items-center space-x-4 p-4 hover:bg-gradient-to-r hover:from-green-50 hover:to-emerald-50 rounded-xl transition-all duration-200 group border border-gray-100 hover:border-green-200 hover:shadow-md text-left"
+                                  className="flex items-center space-x-3 sm:space-x-4 p-3 sm:p-4 hover:bg-gradient-to-r hover:from-green-50 hover:to-emerald-50 rounded-xl transition-all duration-200 group border border-gray-100 hover:border-green-200 hover:shadow-md text-left"
                                 >
-                                  <div className="relative w-20 h-20 bg-gradient-to-br from-gray-100 to-gray-200 rounded-xl overflow-hidden flex-shrink-0 border-2 border-gray-200 group-hover:border-green-300 transition-colors">
+                                  <div className="relative w-16 h-16 sm:w-20 sm:h-20 bg-gradient-to-br from-gray-100 to-gray-200 rounded-xl overflow-hidden flex-shrink-0 border-2 border-gray-200 group-hover:border-green-300 transition-colors">
                                     <img 
                                       src={product.image || "/placeholder-product.jpg"} 
                                       alt={product.name}
@@ -441,7 +453,7 @@ const Navbar: React.FC<NavbarProps> = ({
                                     />
                                   </div>
                                   <div className="flex-1 min-w-0">
-                                    <p className="text-sm font-semibold text-gray-900 group-hover:text-green-600 line-clamp-2 mb-2 transition-colors">
+                                    <p className="text-xs sm:text-sm font-semibold text-gray-900 group-hover:text-green-600 line-clamp-2 mb-2 transition-colors">
                                       {product.name}
                                     </p>
                                     <div className="flex items-center space-x-2 mb-2">
@@ -456,7 +468,7 @@ const Navbar: React.FC<NavbarProps> = ({
                                       )}
                                     </div>
                                     <div className="flex items-center justify-between">
-                                      <span className="text-base font-bold text-green-600">
+                                      <span className="text-sm sm:text-base font-bold text-green-600">
                                         {formatPrice(product.price)} TND
                                       </span>
                                       <ArrowRight className="w-4 h-4 text-gray-400 group-hover:text-green-600 transform group-hover:translate-x-1 transition-all" />
@@ -470,22 +482,22 @@ const Navbar: React.FC<NavbarProps> = ({
                       </div>
 
                       {!isInitialLoad && searchTerm.length >= 2 && displayProducts.length === 0 && displayCategories.length === 0 && !isSearching && (
-                        <div className="p-12 text-center">
-                          <div className="w-24 h-24 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-6">
-                            <Search className="w-12 h-12 text-gray-400" />
+                        <div className="p-6 sm:p-12 text-center">
+                          <div className="w-16 h-16 sm:w-24 sm:h-24 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4 sm:mb-6">
+                            <Search className="w-8 h-8 sm:w-12 sm:h-12 text-gray-400" />
                           </div>
-                          <h3 className="text-xl font-bold text-gray-900 mb-2">Aucun résultat trouvé</h3>
-                          <p className="text-gray-500 mb-6">Essayez d'autres mots-clés ou parcourez nos catégories populaires</p>
+                          <h3 className="text-lg sm:text-xl font-bold text-gray-900 mb-2">Aucun résultat trouvé</h3>
+                          <p className="text-gray-500 text-sm sm:text-base mb-4 sm:mb-6">Essayez d'autres mots-clés ou parcourez nos catégories populaires</p>
                           <Button
                             onClick={() => setSearchTerm("")}
-                            className="bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white rounded-xl shadow-lg hover:shadow-xl transition-all duration-200"
+                            className="bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white rounded-xl shadow-lg hover:shadow-xl transition-all duration-200 text-sm sm:text-base"
                           >
                             Réinitialiser la recherche
                           </Button>
                         </div>
                       )}
 
-                      <div className="bg-gradient-to-r from-gray-50 to-green-50 px-6 py-4 border-t border-gray-200">
+                      <div className="bg-gradient-to-r from-gray-50 to-green-50 px-4 sm:px-6 py-3 sm:py-4 border-t border-gray-200">
                         <p className="text-xs text-gray-600 text-center font-medium">
                           Tapez au moins 2 caractères pour lancer une recherche
                         </p>
@@ -496,16 +508,17 @@ const Navbar: React.FC<NavbarProps> = ({
               </div>
             </div>
 
-            <div className="hidden md:flex items-center space-x-3">
+            {/* Desktop User Actions */}
+            <div className="hidden md:flex items-center space-x-2 sm:space-x-3">
               <Button 
                 variant="ghost" 
                 size="sm" 
                 className="relative hover:bg-green-50 hover:text-green-600 rounded-xl transition-all duration-300 hover:scale-105" 
                 onClick={onCartOpen}
               >
-                <ShoppingCart className="h-5 w-5" />
+                <ShoppingCart className="h-4 w-4 sm:h-5 sm:w-5" />
                 {cartCount > 0 && (
-                  <span className="absolute -top-2 -right-2 bg-gradient-to-r from-red-600 to-red-500 text-white text-xs rounded-full w-6 h-6 flex items-center justify-center font-bold shadow-lg animate-bounce">
+                  <span className="absolute -top-1.5 -right-1.5 sm:-top-2 sm:-right-2 bg-gradient-to-r from-red-600 to-red-500 text-white text-xs rounded-full w-5 h-5 sm:w-6 sm:h-6 flex items-center justify-center font-bold shadow-lg animate-bounce">
                     {cartCount}
                   </span>
                 )}
@@ -518,19 +531,19 @@ const Navbar: React.FC<NavbarProps> = ({
                   onAdminClick={onAdminRedirect}
                 />
               ) : (
-                <div className="flex items-center space-x-2">
+                <div className="flex items-center space-x-1 sm:space-x-2">
                   <Button 
                     variant="outline" 
                     size="sm" 
                     onClick={() => onAuthModalOpen("login")}
-                    className="border-2 border-green-200 text-green-700 hover:bg-green-50 hover:border-green-300 rounded-xl font-medium transition-all duration-300 hover:scale-105"
+                    className="border-2 border-green-200 text-green-700 hover:bg-green-50 hover:border-green-300 rounded-xl font-medium transition-all duration-300 hover:scale-105 text-xs sm:text-sm"
                   >
                     Connexion
                   </Button>
                   <Button 
                     size="sm" 
                     onClick={() => onAuthModalOpen("register")}
-                    className="bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white rounded-xl font-medium shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105"
+                    className="bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white rounded-xl font-medium shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105 text-xs sm:text-sm"
                   >
                     Inscription
                   </Button>
@@ -538,16 +551,32 @@ const Navbar: React.FC<NavbarProps> = ({
               )}
             </div>
 
+            {/* Mobile Menu Button & Cart */}
             <div className="md:hidden flex items-center space-x-2">
+              {/* Mobile Search Button */}
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                className="relative"
+                onClick={() => {
+                  const searchInput = document.getElementById('mobile-search-input')
+                  if (searchInput) {
+                    searchInput.focus()
+                  }
+                }}
+              >
+                <Search className="h-4 w-4 sm:h-5 sm:w-5" />
+              </Button>
+              
               <Button 
                 variant="ghost" 
                 size="sm" 
                 className="relative" 
                 onClick={onCartOpen}
               >
-                <ShoppingCart className="h-5 w-5" />
+                <ShoppingCart className="h-4 w-4 sm:h-5 sm:w-5" />
                 {cartCount > 0 && (
-                  <span className="absolute -top-1 -right-1 bg-red-600 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center font-bold">
+                  <span className="absolute -top-1 -right-1 bg-red-600 text-white text-xs rounded-full w-4 h-4 flex items-center justify-center font-bold">
                     {cartCount}
                   </span>
                 )}
@@ -558,41 +587,106 @@ const Navbar: React.FC<NavbarProps> = ({
                 onClick={() => setIsMenuOpen(!isMenuOpen)}
                 className="transition-transform duration-300 hover:scale-110"
               >
-                {isMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
+                {isMenuOpen ? <X className="h-5 w-5 sm:h-6 sm:w-6" /> : <Menu className="h-5 w-5 sm:h-6 sm:w-6" />}
               </Button>
             </div>
           </div>
 
+          {/* Mobile Search Bar - Always visible on mobile */}
+          <div className="md:hidden mb-3">
+            <div className="relative" ref={searchRef}>
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400 transition-colors duration-200 peer-focus:text-green-600" />
+                <Input
+                  id="mobile-search-input"
+                  type="text"
+                  placeholder="Rechercher produits..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  onFocus={() => setShowSearchResults(true)}
+                  className="peer pl-10 pr-4 h-10 text-sm border-2 border-green-100 focus:border-green-400 focus:ring-2 focus:ring-green-100 rounded-xl bg-gray-50 focus:bg-white transition-all duration-300 shadow-sm hover:shadow-md focus:shadow-lg"
+                />
+                {isSearching && (
+                  <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
+                    <div className="animate-spin rounded-full h-4 w-4 border-2 border-green-600 border-t-transparent"></div>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+
+          {/* Mobile Menu */}
           {isMenuOpen && (
-            <div className="md:hidden py-6 border-t border-green-100 animate-in slide-in-from-top-4 duration-300">
-              <div className="space-y-4">
-                <div className="relative mb-4">
-                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-                  <Input
-                    type="text"
-                    placeholder="Rechercher..."
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    className="pl-10 border-2 border-green-100 rounded-xl focus:border-green-400 focus:ring-2 focus:ring-green-200 transition-all duration-200"
-                  />
+            <div className="md:hidden bg-white rounded-xl shadow-2xl border border-green-100 mb-4 animate-in slide-in-from-top-4 duration-300 max-h-[calc(100vh-200px)] overflow-y-auto">
+              <div className="p-4 space-y-4">
+                {/* Mobile Navigation Links */}
+                <div className="space-y-2">
+                  {[
+                    { name: "Accueil", href: "#accueil" },
+                    { name: "Produits", href: "#produits" },
+                    { name: "À Propos", href: "#about" },
+                    { name: "Contact", href: "#contact" }
+                  ].map((item) => (
+                    <a 
+                      key={item.name} 
+                      href={item.href} 
+                      className="flex items-center justify-between py-3 px-4 text-gray-700 hover:text-green-600 hover:bg-green-50 rounded-xl font-medium transition-all duration-200 group" 
+                      onClick={() => setIsMenuOpen(false)}
+                    >
+                      <span>{item.name}</span>
+                      <ArrowRight className="w-4 h-4 text-gray-400 group-hover:text-green-600 group-hover:translate-x-1 transition-all" />
+                    </a>
+                  ))}
                 </div>
 
-                {[
-                  { name: "Accueil", href: "#accueil" },
-                  { name: "Produits", href: "#produits" },
-                  { name: "À Propos", href: "#about" },
-                  { name: "Contact", href: "#contact" }
-                ].map((item) => (
-                  <a 
-                    key={item.name} 
-                    href={item.href} 
-                    className="block py-3 px-4 text-gray-700 hover:text-green-600 hover:bg-green-50 rounded-xl font-medium transition-all duration-200 hover:translate-x-2" 
-                    onClick={() => setIsMenuOpen(false)}
-                  >
-                    {item.name}
-                  </a>
-                ))}
+                {/* Mobile Categories Accordion */}
+                {categories.length > 0 && (
+                  <div className="border-t border-green-100 pt-4">
+                    <button
+                      onClick={() => setIsMobileCategoriesOpen(!isMobileCategoriesOpen)}
+                      className="flex items-center justify-between w-full py-3 px-4 text-gray-700 hover:text-green-600 hover:bg-green-50 rounded-xl font-medium transition-all duration-200"
+                    >
+                      <div className="flex items-center space-x-2">
+                        <Package className="w-4 h-4" />
+                        <span>Catégories</span>
+                      </div>
+                      <ChevronDown className={`w-4 h-4 transition-transform duration-300 ${isMobileCategoriesOpen ? 'rotate-180' : ''}`} />
+                    </button>
+                    
+                    {isMobileCategoriesOpen && (
+                      <div className="mt-2 space-y-1 ml-4">
+                        <button
+                          onClick={() => handleCategoryClick('Tous')}
+                          className="w-full text-left py-2 px-3 text-sm text-gray-600 hover:text-green-600 hover:bg-green-50 rounded-lg transition-colors"
+                        >
+                          Toutes les catégories
+                        </button>
+                        {categories.map((category) => (
+                          <div key={category._id} className="space-y-1">
+                            <button
+                              onClick={() => {
+                                if (category.subcategories && category.subcategories.length > 0) {
+                                  // Toggle subcategories
+                                } else {
+                                  handleCategoryClick(category.name)
+                                }
+                              }}
+                              className="w-full text-left py-2 px-3 text-sm text-gray-600 hover:text-green-600 hover:bg-green-50 rounded-lg transition-colors flex items-center justify-between"
+                            >
+                              <span>{category.name}</span>
+                              {category.subcategories && category.subcategories.length > 0 && (
+                                <ChevronDown className="w-3 h-3" />
+                              )}
+                            </button>
+                            {/* Subcategories could be nested here if needed */}
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )}
 
+                {/* User Section */}
                 <div className="pt-4 border-t border-green-100">
                   {user ? (
                     <div className="space-y-3">
@@ -605,7 +699,7 @@ const Navbar: React.FC<NavbarProps> = ({
                           variant="outline" 
                           size="sm" 
                           onClick={() => { onAdminRedirect(); setIsMenuOpen(false); }} 
-                          className="w-full border-green-200 rounded-xl hover:bg-green-50 transition-all duration-200"
+                          className="w-full border-green-200 rounded-xl hover:bg-green-50 transition-all duration-200 text-sm"
                         >
                           Panneau Admin
                         </Button>
@@ -614,7 +708,7 @@ const Navbar: React.FC<NavbarProps> = ({
                         variant="outline" 
                         size="sm" 
                         onClick={() => { onLogout(); setIsMenuOpen(false); }} 
-                        className="w-full border-green-200 rounded-xl hover:bg-green-50 transition-all duration-200"
+                        className="w-full border-green-200 rounded-xl hover:bg-green-50 transition-all duration-200 text-sm"
                       >
                         Déconnexion
                       </Button>
@@ -625,14 +719,14 @@ const Navbar: React.FC<NavbarProps> = ({
                         variant="outline" 
                         size="sm" 
                         onClick={() => { onAuthModalOpen("login"); setIsMenuOpen(false); }} 
-                        className="w-full border-2 border-green-200 rounded-xl hover:bg-green-50 transition-all duration-200"
+                        className="w-full border-2 border-green-200 rounded-xl hover:bg-green-50 transition-all duration-200 text-sm"
                       >
                         Connexion
                       </Button>
                       <Button 
                         size="sm" 
                         onClick={() => { onAuthModalOpen("register"); setIsMenuOpen(false); }} 
-                        className="w-full bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 rounded-xl shadow-lg transition-all duration-200"
+                        className="w-full bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 rounded-xl shadow-lg transition-all duration-200 text-sm"
                       >
                         Inscription
                       </Button>
@@ -645,22 +739,22 @@ const Navbar: React.FC<NavbarProps> = ({
         </div>
       </nav>
 
-      {/* Categories Bar with Mega Menu */}
+      {/* Categories Bar with Mega Menu - Desktop Only */}
       <div 
-        className={`bg-gradient-to-r from-green-700 via-green-600 to-green-700 shadow-lg transition-all duration-500 sticky z-40 ${
+        className={`hidden lg:block bg-gradient-to-r from-green-700 via-green-600 to-green-700 shadow-lg transition-all duration-500 sticky z-40 ${
           scrolled 
-            ? 'top-[80px] opacity-0 -translate-y-full pointer-events-none' 
-            : 'top-[80px] opacity-100 translate-y-0'
+            ? 'top-[64px] sm:top-[80px] opacity-0 -translate-y-full pointer-events-none' 
+            : 'top-[64px] sm:top-[80px] opacity-100 translate-y-0'
         }`}
         style={{ backgroundSize: '200% 200%', animation: 'gradientShift 15s ease infinite' }}
       >
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative">
           {/* Main Categories Bar */}
-          <div className="flex items-center space-x-2 py-4">
+          <div className="flex items-center space-x-2 py-3">
             {/* All Categories Button */}
             <button
               onClick={() => handleCategoryClick('Tous')}
-              className="group px-5 py-2.5 text-white bg-white/10 hover:bg-white/20 backdrop-blur-sm rounded-xl transition-all duration-300 whitespace-nowrap font-semibold text-sm flex items-center space-x-2 border border-white/20 hover:border-white/40 hover:scale-105 shadow-lg hover:shadow-xl flex-shrink-0"
+              className="group px-4 py-2 text-white bg-white/10 hover:bg-white/20 backdrop-blur-sm rounded-xl transition-all duration-300 whitespace-nowrap font-semibold text-sm flex items-center space-x-2 border border-white/20 hover:border-white/40 hover:scale-105 shadow-lg hover:shadow-xl flex-shrink-0"
             >
               <div className="p-1.5 bg-white/20 rounded-lg group-hover:bg-white/30 transition-all duration-300 group-hover:rotate-12">
                 <Package className="w-4 h-4" />
@@ -670,7 +764,7 @@ const Navbar: React.FC<NavbarProps> = ({
               </span>
             </button>
 
-            <div className="h-8 w-px bg-white/20 flex-shrink-0"></div>
+            <div className="h-6 w-px bg-white/20 flex-shrink-0"></div>
 
             {/* Scroll Left Button */}
             <button
@@ -683,7 +777,7 @@ const Navbar: React.FC<NavbarProps> = ({
               className="flex-shrink-0 p-2 text-white hover:bg-white/10 rounded-lg transition-all duration-200 hover:scale-110"
               aria-label="Scroll left"
             >
-              <ChevronLeft className="w-5 h-5" />
+              <ChevronLeft className="w-4 h-4" />
             </button>
 
             {/* Scrollable Categories */}
@@ -704,7 +798,7 @@ const Navbar: React.FC<NavbarProps> = ({
                     >
                       <button
                         onClick={() => handleCategoryClick(category.name)}
-                        className="group relative px-5 py-2.5 text-white hover:bg-white/10 rounded-xl transition-all duration-300 whitespace-nowrap font-medium text-sm flex items-center space-x-2 hover:scale-105 hover:shadow-lg"
+                        className="group relative px-4 py-2 text-white hover:bg-white/10 rounded-xl transition-all duration-300 whitespace-nowrap font-medium text-sm flex items-center space-x-2 hover:scale-105 hover:shadow-lg"
                         style={{
                           animation: `slideInFromRight 0.5s ease-out ${index * 0.1}s both`
                         }}
@@ -743,11 +837,11 @@ const Navbar: React.FC<NavbarProps> = ({
               className="flex-shrink-0 p-2 text-white hover:bg-white/10 rounded-lg transition-all duration-200 hover:scale-110"
               aria-label="Scroll right"
             >
-              <ChevronRight className="w-5 h-5" />
+              <ChevronRight className="w-4 h-4" />
             </button>
           </div>
 
-          {/* Mega Menu Dropdown - Full Width with Gap for Smooth Hover */}
+          {/* Mega Menu Dropdown */}
           {hoveredCategory && categories.find(c => c._id === hoveredCategory) && (
             <div
               className="absolute left-0 right-0 bg-white shadow-2xl border-t-4 border-green-500 z-[100]"
@@ -764,7 +858,7 @@ const Navbar: React.FC<NavbarProps> = ({
                 onMouseEnter={() => setHoveredCategory(hoveredCategory)}
               />
 
-              <div className="max-w-7xl mx-auto px-8 py-8">
+              <div className="max-w-7xl mx-auto px-6 py-6">
                 {categories
                   .filter(cat => cat._id === hoveredCategory)
                   .map(category => {
@@ -772,7 +866,7 @@ const Navbar: React.FC<NavbarProps> = ({
                     
                     if (subcategories.length === 0) {
                       return (
-                        <div key={category._id} className="text-center py-8">
+                        <div key={category._id} className="text-center py-6">
                           <p className="text-gray-500">Aucune sous-catégorie disponible</p>
                         </div>
                       )
@@ -781,9 +875,9 @@ const Navbar: React.FC<NavbarProps> = ({
                     return (
                       <div key={category._id}>
                         {/* Category Header */}
-                        <div className="mb-6 pb-4 border-b-2 border-green-100">
-                          <h3 className="text-2xl font-bold text-gray-900 mb-2 flex items-center">
-                            <Tag className="w-6 h-6 text-green-600 mr-3" />
+                        <div className="mb-4 pb-4 border-b-2 border-green-100">
+                          <h3 className="text-xl font-bold text-gray-900 mb-2 flex items-center">
+                            <Tag className="w-5 h-5 text-green-600 mr-2" />
                             {category.name}
                           </h3>
                           {category.description && (
@@ -797,7 +891,7 @@ const Navbar: React.FC<NavbarProps> = ({
                         </div>
 
                         {/* Subcategories Grid */}
-                        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
                           {subcategories.map((subcategory, idx) => (
                             <button
                               key={subcategory._id}
@@ -811,14 +905,14 @@ const Navbar: React.FC<NavbarProps> = ({
                                 e.preventDefault()
                                 e.stopPropagation()
                               }}
-                              className="group p-4 rounded-xl border-2 border-gray-100 hover:border-green-300 hover:bg-gradient-to-br hover:from-green-50 hover:to-emerald-50 transition-all duration-300 text-left hover:shadow-lg hover:scale-105 cursor-pointer"
+                              className="group p-3 rounded-xl border-2 border-gray-100 hover:border-green-300 hover:bg-gradient-to-br hover:from-green-50 hover:to-emerald-50 transition-all duration-300 text-left hover:shadow-lg hover:scale-105 cursor-pointer"
                               style={{
                                 animation: `fadeInUp 0.3s ease-out ${idx * 0.05}s both`
                               }}
                             >
-                              <div className="flex items-start space-x-3">
-                                <div className="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center flex-shrink-0 group-hover:bg-green-200 group-hover:scale-110 transition-all duration-300">
-                                  <ChevronRight className="w-5 h-5 text-green-600 group-hover:translate-x-1 transition-transform" />
+                              <div className="flex items-start space-x-2">
+                                <div className="w-8 h-8 bg-green-100 rounded-lg flex items-center justify-center flex-shrink-0 group-hover:bg-green-200 group-hover:scale-110 transition-all duration-300">
+                                  <ChevronRight className="w-4 h-4 text-green-600 group-hover:translate-x-1 transition-transform" />
                                 </div>
                                 <div className="flex-1 min-w-0">
                                   <h4 className="font-semibold text-gray-900 group-hover:text-green-600 transition-colors line-clamp-2 text-sm">
@@ -836,7 +930,7 @@ const Navbar: React.FC<NavbarProps> = ({
                         </div>
 
                         {/* View All Button */}
-                        <div className="mt-8 text-center">
+                        <div className="mt-6 text-center">
                           <button
                             onClick={(e) => {
                               e.preventDefault()
@@ -848,10 +942,10 @@ const Navbar: React.FC<NavbarProps> = ({
                               e.preventDefault()
                               e.stopPropagation()
                             }}
-                            className="inline-flex items-center space-x-2 px-8 py-3 bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white font-semibold rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105 cursor-pointer"
+                            className="inline-flex items-center space-x-2 px-6 py-2.5 bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white font-semibold rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105 cursor-pointer text-sm"
                           >
                             <span>Voir tous les produits de {category.name}</span>
-                            <ArrowRight className="w-5 h-5" />
+                            <ArrowRight className="w-4 h-4" />
                           </button>
                         </div>
                       </div>
@@ -864,6 +958,101 @@ const Navbar: React.FC<NavbarProps> = ({
 
         <div className="absolute bottom-0 left-0 right-0 h-1 bg-gradient-to-r from-transparent via-green-400 to-transparent opacity-50"></div>
       </div>
+
+      {/* Mobile Search Results Overlay */}
+      {showSearchResults && (displayProducts.length > 0 || displayCategories.length > 0) && (
+        <div className="md:hidden fixed inset-0 bg-white z-[100] top-0 pt-20 animate-in slide-in-from-top duration-300">
+          <div className="h-full overflow-y-auto">
+            <div className="sticky top-0 bg-white border-b border-green-100 p-4 flex items-center justify-between">
+              <div className="flex items-center space-x-2">
+                <Search className="w-5 h-5 text-green-600" />
+                <div>
+                  <h3 className="font-bold text-gray-900">
+                    {isInitialLoad ? 'Produits populaires' : `Résultats pour "${searchTerm}"`}
+                  </h3>
+                  <p className="text-sm text-gray-500">
+                    {displayProducts.length + displayCategories.length} résultats
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() => setShowSearchResults(false)}
+                className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="p-4 space-y-6">
+              {displayCategories.length > 0 && (
+                <div>
+                  <h4 className="text-sm font-bold text-gray-900 mb-3 flex items-center space-x-2">
+                    <Package className="w-4 h-4 text-green-600" />
+                    <span>Catégories</span>
+                  </h4>
+                  <div className="space-y-2">
+                    {displayCategories.map((category) => (
+                      <button
+                        key={category._id}
+                        onClick={() => handleCategoryClick(category.name)}
+                        className="w-full flex items-center justify-between p-3 bg-gray-50 hover:bg-green-50 rounded-xl transition-colors border border-gray-100"
+                      >
+                        <div className="flex items-center space-x-3">
+                          <div className="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center">
+                            <Tag className="w-5 h-5 text-green-600" />
+                          </div>
+                          <span className="font-medium text-gray-700">{category.name}</span>
+                        </div>
+                        <ChevronRight className="w-5 h-5 text-gray-400" />
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {displayProducts.length > 0 && (
+                <div>
+                  <h4 className="text-sm font-bold text-gray-900 mb-3 flex items-center space-x-2">
+                    <TrendingUp className="w-4 h-4 text-green-600" />
+                    <span>Produits</span>
+                  </h4>
+                  <div className="space-y-3">
+                    {displayProducts.map((product) => (
+                      <button
+                        key={product._id}
+                        onClick={() => handleProductClick(product._id)}
+                        className="w-full flex items-center space-x-3 p-3 bg-gray-50 hover:bg-green-50 rounded-xl transition-colors border border-gray-100 text-left"
+                      >
+                        <div className="relative w-16 h-16 bg-gradient-to-br from-gray-100 to-gray-200 rounded-lg overflow-hidden flex-shrink-0">
+                          <img 
+                            src={product.image || "/placeholder-product.jpg"} 
+                            alt={product.name}
+                            className="w-full h-full object-cover"
+                          />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="font-medium text-gray-900 line-clamp-2 text-sm mb-1">{product.name}</p>
+                          <div className="flex items-center justify-between">
+                            <span className="font-bold text-green-600">
+                              {formatPrice(product.price)} TND
+                            </span>
+                            {product.rating && product.rating > 0 && (
+                              <div className="flex items-center space-x-1">
+                                <Star className="w-3 h-3 fill-yellow-400 text-yellow-400" />
+                                <span className="text-xs font-medium text-gray-600">{product.rating.toFixed(1)}</span>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
 
       <style jsx global>{`
         .scrollbar-hide {
@@ -879,7 +1068,7 @@ const Navbar: React.FC<NavbarProps> = ({
         }
         
         .scrollbar-thin::-webkit-scrollbar {
-          height: 6px;
+          height: 4px;
         }
         
         .scrollbar-thumb-white\/20::-webkit-scrollbar-thumb {
@@ -934,6 +1123,16 @@ const Navbar: React.FC<NavbarProps> = ({
           to {
             opacity: 1;
             transform: translateY(0);
+          }
+        }
+
+        /* Responsive breakpoints */
+        @media (max-width: 640px) {
+          .line-clamp-2 {
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
           }
         }
       `}</style>

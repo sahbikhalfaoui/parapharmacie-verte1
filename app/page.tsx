@@ -75,6 +75,7 @@ export default function VitaPharmWebsite() {
   const [cartItems, setCartItems] = useState<Product[]>([])
   const [isCartOpen, setIsCartOpen] = useState(false)
   const [user, setUser] = useState<User | null>(null)
+  const [favorites, setFavorites] = useState<Set<string>>(new Set())
   
   const [products, setProducts] = useState<Product[]>([])
   const [allCategories, setAllCategories] = useState<Category[]>([])
@@ -85,12 +86,13 @@ export default function VitaPharmWebsite() {
   const [sortBy, setSortBy] = useState("name")
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc")
   const [currentPage, setCurrentPage] = useState(1)
-  const [itemsPerPage] = useState(12)
+  const [itemsPerPage] = useState(15)
   const [selectedBrands, setSelectedBrands] = useState<string[]>([])
   const [availableBrands, setAvailableBrands] = useState<string[]>([])
   const [minRating, setMinRating] = useState(0)
   const [showFilters, setShowFilters] = useState(false)
 
+  // Load cart and favorites from localStorage on component mount
   useEffect(() => {
     const token = localStorage.getItem('authToken')
     const userData = localStorage.getItem('userData')
@@ -99,8 +101,55 @@ export default function VitaPharmWebsite() {
       setUser(JSON.parse(userData))
     }
     
+    // Load cart from localStorage
+    const savedCart = localStorage.getItem('cart')
+    if (savedCart) {
+      try {
+        const parsedCart = JSON.parse(savedCart)
+        // Ensure each item has quantity property
+        const cartWithQuantity = parsedCart.map((item: any) => ({
+          ...item,
+          quantity: item.quantity || 1
+        }))
+        setCartItems(cartWithQuantity)
+      } catch (error) {
+        console.error('Error parsing cart from localStorage:', error)
+        setCartItems([])
+      }
+    }
+    
+    // Load favorites from localStorage
+    const savedFavorites = localStorage.getItem('favorites')
+    if (savedFavorites) {
+      try {
+        const parsedFavorites = JSON.parse(savedFavorites)
+        setFavorites(new Set(parsedFavorites))
+      } catch (error) {
+        console.error('Error parsing favorites from localStorage:', error)
+        setFavorites(new Set())
+      }
+    }
+    
     loadData()
   }, [])
+
+  // Save cart to localStorage whenever it changes
+  useEffect(() => {
+    if (cartItems.length > 0) {
+      localStorage.setItem('cart', JSON.stringify(cartItems))
+    } else {
+      localStorage.removeItem('cart')
+    }
+  }, [cartItems])
+
+  // Save favorites to localStorage whenever they change
+  useEffect(() => {
+    if (favorites.size > 0) {
+      localStorage.setItem('favorites', JSON.stringify(Array.from(favorites)))
+    } else {
+      localStorage.removeItem('favorites')
+    }
+  }, [favorites])
 
   const loadData = async () => {
     setIsLoading(true)
@@ -228,7 +277,7 @@ export default function VitaPharmWebsite() {
     if (token) {
       window.location.href = '/admin'
     } else {
-      alert('Veuillez vous reconnecter')
+      
       setAuthModal({ isOpen: true, mode: "login" })
     }
   }
@@ -236,17 +285,40 @@ export default function VitaPharmWebsite() {
   const addToCart = (product: Product) => {
     setCartItems(prevItems => {
       const existingItem = prevItems.find(item => item._id === product._id)
+      let newItems
+      
       if (existingItem) {
-        return prevItems.map(item =>
-          item._id === product._id ? { ...item, quantity: item.quantity + 1 } : item
+        newItems = prevItems.map(item =>
+          item._id === product._id ? { 
+            ...item, 
+            quantity: item.quantity + 1 
+          } : item
         )
       } else {
-        return [...prevItems, { 
+        newItems = [...prevItems, { 
           ...product, 
           quantity: 1,
           price: parseFloat(product.price.toString().replace(/[^\d.-]/g, '')) || 0
         }]
       }
+      
+      // Save to localStorage immediately
+      localStorage.setItem('cart', JSON.stringify(newItems))
+      return newItems
+    })
+  }
+
+  const toggleFavorite = (productId: string) => {
+    setFavorites(prev => {
+      const newFavorites = new Set(prev)
+      if (newFavorites.has(productId)) {
+        newFavorites.delete(productId)
+      } else {
+        newFavorites.add(productId)
+      }
+      // Save to localStorage immediately
+      localStorage.setItem('favorites', JSON.stringify(Array.from(newFavorites)))
+      return newFavorites
     })
   }
 
@@ -254,16 +326,31 @@ export default function VitaPharmWebsite() {
     if (quantity === 0) {
       removeFromCart(id)
     } else {
-      setCartItems(prevItems => prevItems.map(item => item._id === id ? { ...item, quantity } : item))
+      setCartItems(prevItems => {
+        const newItems = prevItems.map(item => 
+          item._id === id ? { ...item, quantity } : item
+        )
+        localStorage.setItem('cart', JSON.stringify(newItems))
+        return newItems
+      })
     }
   }
 
   const removeFromCart = (id: string) => {
-    setCartItems(prevItems => prevItems.filter(item => item._id !== id))
+    setCartItems(prevItems => {
+      const newItems = prevItems.filter(item => item._id !== id)
+      if (newItems.length > 0) {
+        localStorage.setItem('cart', JSON.stringify(newItems))
+      } else {
+        localStorage.removeItem('cart')
+      }
+      return newItems
+    })
   }
 
   const clearCart = () => {
     setCartItems([])
+    localStorage.removeItem('cart')
   }
 
   const logout = () => {
@@ -322,6 +409,8 @@ export default function VitaPharmWebsite() {
         onMinRatingChange={setMinRating}
         onCurrentPageChange={setCurrentPage}
         user={user}
+        favorites={favorites}
+        onToggleFavorite={toggleFavorite}
       />
 
       {/* About Section */}
@@ -620,7 +709,6 @@ export default function VitaPharmWebsite() {
         updateQuantity={updateQuantity} 
         removeFromCart={removeFromCart} 
         clearCart={clearCart}
-        user={user}
       />
     </div>
   )
