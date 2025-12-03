@@ -6,8 +6,8 @@ import './globals.css'
 
 export const metadata: Metadata = {
   title: 'BioPharma',
-  description: 'Created with v0',
-  generator: 'v0.app',
+  description: 'Biopharma Parapharmacie',
+  generator: 'Parpharmacie',
 }
 
 export default function RootLayout({
