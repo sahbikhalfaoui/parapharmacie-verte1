@@ -71,12 +71,7 @@ const HeroSection: React.FC<HeroSectionProps> = ({ onAddToCart }) => {
       subtitle: "Découvrez nos Derniers Arrivages",
       description: "Soins visage, corps et compléments bien-être"
     },
-    {
-      image: "https://images.unsplash.com/photo-1512069511692-41e1e3a896b1?w=1200&h=500&fit=crop",
-      title: "Conseil Pharmaceutique Expert",
-      subtitle: "À Votre Service 7j/7",
-      description: "Des professionnels pour vous accompagner dans vos choix santé"
-    }
+   
   ]
 
   useEffect(() => {

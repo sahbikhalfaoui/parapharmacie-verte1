@@ -488,11 +488,7 @@ export default function VitaPharmWebsite() {
             </div>
             <div className="relative">
               <div className="absolute inset-0 bg-gradient-to-br from-green-400 to-emerald-500 rounded-3xl transform rotate-3 opacity-20"></div>
-              <img 
-                src="/api/placeholder/600/400" 
-                alt="Notre équipe" 
-                className="relative rounded-3xl shadow-2xl w-full h-auto transform hover:scale-105 transition-transform duration-500"
-              />
+             
             </div>
           </div>
         </div>
@@ -653,15 +649,7 @@ export default function VitaPharmWebsite() {
                 Votre partenaire santé de confiance pour une vie plus saine et équilibrée.
               </p>
               <div className="flex space-x-4">
-                {[Facebook, Instagram, Twitter, Linkedin].map((Icon, index) => (
-                  <a 
-                    key={index}
-                    href="#" 
-                    className="w-10 h-10 bg-gray-800 hover:bg-gradient-to-br hover:from-green-600 hover:to-emerald-600 rounded-lg flex items-center justify-center transition-all duration-300 transform hover:scale-110"
-                  >
-                    <Icon className="w-5 h-5" />
-                  </a>
-                ))}
+                
               </div>
             </div>
 
