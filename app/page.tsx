@@ -69,6 +69,7 @@ interface Subcategory {
 }
 
 export default function VitaPharmWebsite() {
+  const [showLoading, setShowLoading] = useState(true)
   const [authModal, setAuthModal] = useState({ isOpen: false, mode: "login" as "login" | "register" })
   const [activeCategory, setActiveCategory] = useState("Tous")
   const [activeSubcategory, setActiveSubcategory] = useState("Tous")
@@ -94,6 +95,11 @@ export default function VitaPharmWebsite() {
 
   // Load cart and favorites from localStorage on component mount
   useEffect(() => {
+    // Set loading timer
+    const loadingTimer = setTimeout(() => {
+      setShowLoading(false)
+    }, 5000)
+
     const token = localStorage.getItem('authToken')
     const userData = localStorage.getItem('userData')
     
@@ -131,6 +137,8 @@ export default function VitaPharmWebsite() {
     }
     
     loadData()
+
+    return () => clearTimeout(loadingTimer)
   }, [])
 
   // Save cart to localStorage whenever it changes
@@ -360,6 +368,31 @@ export default function VitaPharmWebsite() {
   }
 
   const cartCount = cartItems.reduce((sum, item) => sum + item.quantity, 0)
+
+  // Loading Screen Component
+  if (showLoading) {
+    return (
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-gradient-to-br from-green-600 via-emerald-600 to-teal-600">
+        <div className="text-center">
+          <div className="mb-8 relative">
+            <div className="w-24 h-24 mx-auto bg-white rounded-full flex items-center justify-center shadow-2xl">
+              <Heart className="w-12 h-12 text-green-600 animate-pulse" />
+            </div>
+            <div className="absolute inset-0 w-24 h-24 mx-auto border-4 border-white border-t-transparent rounded-full animate-spin"></div>
+          </div>
+          
+          <h1 className="text-4xl font-bold text-white mb-4">BioPharma</h1>
+          <p className="text-white/90 text-lg mb-8">Votre partenaire santé de confiance</p>
+          
+          <div className="flex items-center justify-center space-x-2">
+            <div className="w-3 h-3 bg-white rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></div>
+            <div className="w-3 h-3 bg-white rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></div>
+            <div className="w-3 h-3 bg-white rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></div>
+          </div>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-green-50 via-emerald-50 to-teal-50">
