@@ -24,6 +24,8 @@ import {
 import HeroSection from "@/components/HeroSection"
 import ProductsSection from "@/components/ProductsSection"
 import Navbar from "@/components/Navbar"
+import { ToastContainer } from "@/components/Toast"
+import { ConfirmModal } from "@/components/ConfirmModal"
 
 interface User {
   id?: string
@@ -68,6 +70,17 @@ interface Subcategory {
   categoryId: string
 }
 
+interface NavbarProduct {
+  _id: string
+  name: string
+  price: string | number
+  image?: string
+  categoryName?: string
+  subcategoryName?: string
+  rating?: number
+  badge?: string
+}
+
 export default function VitaPharmWebsite() {
   const [showLoading, setShowLoading] = useState(true)
   const [authModal, setAuthModal] = useState({ isOpen: false, mode: "login" as "login" | "register" })
@@ -92,6 +105,25 @@ export default function VitaPharmWebsite() {
   const [availableBrands, setAvailableBrands] = useState<string[]>([])
   const [minRating, setMinRating] = useState(0)
   const [showFilters, setShowFilters] = useState(false)
+  const [selectedProduct, setSelectedProduct] = useState<Product | null>(null)
+  const [isProductModalOpen, setIsProductModalOpen] = useState(false)
+  const [toasts, setToasts] = useState<any[]>([])
+  const [confirmModal, setConfirmModal] = useState<{
+    isOpen: boolean
+    title: string
+    message: string
+    type?: "danger" | "success" | "warning" | "info"
+    confirmText?: string
+    cancelText?: string
+    onConfirm?: () => void
+    onCancel?: () => void
+  }>({
+    isOpen: false,
+    title: "",
+    message: "",
+    type: "warning"
+  })
+  const [globalSearchTerm, setGlobalSearchTerm] = useState("")
 
   // Load cart and favorites from localStorage on component mount
   useEffect(() => {
@@ -159,6 +191,52 @@ export default function VitaPharmWebsite() {
     }
   }, [favorites])
 
+  // Toast functionality
+  const showToast = (message: string, type: "success" | "error" | "warning" | "info" = "info", duration: number = 4) => {
+    const id = Date.now().toString()
+    const newToast = { id, message, type, duration }
+    setToasts(prev => [newToast, ...prev.slice(0, 4)])
+    
+    if (duration > 0) {
+      setTimeout(() => {
+        removeToast(id)
+      }, duration * 1000)
+    }
+    
+    return id
+  }
+
+  const removeToast = (id: string) => {
+    setToasts(prev => prev.filter(toast => toast.id !== id))
+  }
+
+  const showConfirm = (
+    title: string,
+    message: string,
+    type: "danger" | "success" | "warning" | "info" = "warning",
+    confirmText: string = "Confirmer",
+    cancelText: string = "Annuler"
+  ): Promise<boolean> => {
+    return new Promise((resolve) => {
+      setConfirmModal({
+        isOpen: true,
+        title,
+        message,
+        type,
+        confirmText,
+        cancelText,
+        onConfirm: () => {
+          setConfirmModal(prev => ({ ...prev, isOpen: false }))
+          resolve(true)
+        },
+        onCancel: () => {
+          setConfirmModal(prev => ({ ...prev, isOpen: false }))
+          resolve(false)
+        }
+      })
+    })
+  }
+
   const loadData = async () => {
     setIsLoading(true)
     try {
@@ -191,7 +269,8 @@ export default function VitaPharmWebsite() {
         price: parseFloat(product.price.toString().replace(/[^\d.-]/g, '')) || 0,
         originalPrice: product.originalPrice ? parseFloat(product.originalPrice.toString().replace(/[^\d.-]/g, '')) : null,
         averageRating: product.averageRating || product.rating || 0,
-        totalReviews: product.totalReviews || product.reviews || 0
+        totalReviews: product.totalReviews || product.reviews || 0,
+        quantity: 1
       }))
       
       setProducts(transformedProducts)
@@ -204,6 +283,7 @@ export default function VitaPharmWebsite() {
       
     } catch (error) {
       console.error('Error loading data:', error)
+      showToast("Erreur lors du chargement des données", "error")
       setProducts([])
       setCategories(['Tous'])
       setAllCategories([])
@@ -268,12 +348,15 @@ export default function VitaPharmWebsite() {
     setSortBy("name")
     setSortOrder("asc")
     setCurrentPage(1)
+    setGlobalSearchTerm("")
+    showToast("Filtres réinitialisés", "success")
   }
 
   const handleAuthSuccess = (userData: User) => {
     setUser(userData)
     localStorage.setItem('userData', JSON.stringify(userData))
     setAuthModal({ isOpen: false, mode: "login" })
+    showToast(`Bienvenue ${userData.name} !`, "success")
     
     if (userData.role === 'admin') {
       window.location.href = '/admin'
@@ -285,10 +368,94 @@ export default function VitaPharmWebsite() {
     if (token) {
       window.location.href = '/admin'
     } else {
-      
       setAuthModal({ isOpen: true, mode: "login" })
+      showToast("Veuillez vous connecter pour accéder au panneau admin", "warning")
     }
   }
+
+  const handleProductClick = async (navbarProduct: NavbarProduct) => {
+    console.log('Product clicked from navbar:', navbarProduct);
+    
+    // First, check if we have the product in our loaded products
+    const foundProduct = products.find(p => p._id === navbarProduct._id);
+    
+    if (foundProduct) {
+      console.log('Product found in products array:', foundProduct);
+      setSelectedProduct(foundProduct);
+      setIsProductModalOpen(true);
+      return;
+    }
+    
+    // If not found, fetch it from the API
+    try {
+      console.log('Fetching product details from API for ID:', navbarProduct._id);
+      const response = await fetch(`https://biopharma-backend.onrender.com/api/products/${navbarProduct._id}`);
+      
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      
+      const productData = await response.json();
+      console.log('API response:', productData);
+      
+      // Create a full Product object from the API response
+      const fullProduct: Product = {
+        _id: productData._id,
+        name: productData.name,
+        price: parseFloat(productData.price.toString().replace(/[^\d.-]/g, '')) || 0,
+        image: productData.image || '/placeholder.jpg',
+        categoryName: productData.category?.name || navbarProduct.categoryName || 'Non catégorisé',
+        subcategoryName: productData.subcategory?.name || navbarProduct.subcategoryName || 'Aucune',
+        quantity: 1,
+        description: productData.description || '',
+        averageRating: productData.averageRating || navbarProduct.rating || 0,
+        totalReviews: productData.totalReviews || 0,
+        inStock: productData.inStock !== false,
+        badge: productData.badge || navbarProduct.badge,
+        originalPrice: productData.originalPrice ? parseFloat(productData.originalPrice.toString().replace(/[^\d.-]/g, '')) : undefined,
+        brand: productData.brand || 'Marque générique',
+        category: productData.category || { name: navbarProduct.categoryName || 'Non catégorisé' },
+        subcategory: productData.subcategory || { name: navbarProduct.subcategoryName || 'Aucune' },
+        rating: productData.averageRating || navbarProduct.rating || 0,
+        reviews: productData.totalReviews || 0
+      };
+      
+      console.log('Created full product:', fullProduct);
+      setSelectedProduct(fullProduct);
+      setIsProductModalOpen(true);
+      
+    } catch (error) {
+      console.error('Error fetching product details:', error);
+      
+      // If API fails, create a minimal product from navbar data
+      const minimalProduct: Product = {
+        _id: navbarProduct._id,
+        name: navbarProduct.name,
+        price: typeof navbarProduct.price === 'string' 
+          ? parseFloat(navbarProduct.price.replace(/[^\d.-]/g, '')) || 0 
+          : navbarProduct.price,
+        image: navbarProduct.image || '/placeholder.jpg',
+        categoryName: navbarProduct.categoryName || 'Non catégorisé',
+        subcategoryName: navbarProduct.subcategoryName || 'Aucune',
+        quantity: 1,
+        description: `Produit ${navbarProduct.name}`,
+        averageRating: navbarProduct.rating || 0,
+        totalReviews: 0,
+        inStock: true,
+        badge: navbarProduct.badge,
+        originalPrice: undefined,
+        brand: 'Marque générique',
+        category: { name: navbarProduct.categoryName || 'Non catégorisé' },
+        subcategory: { name: navbarProduct.subcategoryName || 'Aucune' },
+        rating: navbarProduct.rating || 0,
+        reviews: 0
+      };
+      
+      setSelectedProduct(minimalProduct);
+      setIsProductModalOpen(true);
+      showToast("Détails du produit chargés", "info");
+    }
+  };
 
   const addToCart = (product: Product) => {
     setCartItems(prevItems => {
@@ -314,6 +481,8 @@ export default function VitaPharmWebsite() {
       localStorage.setItem('cart', JSON.stringify(newItems))
       return newItems
     })
+    
+    showToast(`${product.name} ajouté au panier`, "success")
   }
 
   const toggleFavorite = (productId: string) => {
@@ -321,8 +490,10 @@ export default function VitaPharmWebsite() {
       const newFavorites = new Set(prev)
       if (newFavorites.has(productId)) {
         newFavorites.delete(productId)
+        showToast("Produit retiré des favoris", "info")
       } else {
         newFavorites.add(productId)
+        showToast("Produit ajouté aux favoris", "success")
       }
       // Save to localStorage immediately
       localStorage.setItem('favorites', JSON.stringify(Array.from(newFavorites)))
@@ -344,27 +515,75 @@ export default function VitaPharmWebsite() {
     }
   }
 
-  const removeFromCart = (id: string) => {
-    setCartItems(prevItems => {
-      const newItems = prevItems.filter(item => item._id !== id)
-      if (newItems.length > 0) {
-        localStorage.setItem('cart', JSON.stringify(newItems))
-      } else {
-        localStorage.removeItem('cart')
+  const removeFromCart = async (id: string) => {
+    const confirmed = await showConfirm(
+      "Supprimer l'article",
+      "Êtes-vous sûr de vouloir supprimer cet article de votre panier ?",
+      "danger",
+      "Supprimer",
+      "Annuler"
+    )
+    
+    if (confirmed) {
+      setCartItems(prevItems => {
+        const newItems = prevItems.filter(item => item._id !== id)
+        if (newItems.length > 0) {
+          localStorage.setItem('cart', JSON.stringify(newItems))
+        } else {
+          localStorage.removeItem('cart')
+        }
+        showToast("Article supprimé du panier", "success")
+        return newItems
+      })
+    }
+  }
+
+  const clearCart = async () => {
+    const confirmed = await showConfirm(
+      "Vider le panier",
+      "Êtes-vous sûr de vouloir vider complètement votre panier ?",
+      "danger",
+      "Vider le panier",
+      "Annuler"
+    )
+    
+    if (confirmed) {
+      setCartItems([])
+      localStorage.removeItem('cart')
+      showToast("Panier vidé", "success")
+    }
+  }
+
+  const logout = async () => {
+    const confirmed = await showConfirm(
+      "Déconnexion",
+      "Êtes-vous sûr de vouloir vous déconnecter ?",
+      "warning",
+      "Déconnexion",
+      "Annuler"
+    )
+    
+    if (confirmed) {
+      localStorage.removeItem('authToken')
+      localStorage.removeItem('userData')
+      setUser(null)
+      showToast("Déconnexion réussie", "success")
+    }
+  }
+
+  const handleGlobalSearch = (term: string) => {
+    setGlobalSearchTerm(term)
+    setActiveCategory("Tous")
+    setActiveSubcategory("Tous")
+    setCurrentPage(1)
+    
+    // Scroll to products section
+    setTimeout(() => {
+      const productsSection = document.getElementById('produits')
+      if (productsSection) {
+        productsSection.scrollIntoView({ behavior: 'smooth', block: 'start' })
       }
-      return newItems
-    })
-  }
-
-  const clearCart = () => {
-    setCartItems([])
-    localStorage.removeItem('cart')
-  }
-
-  const logout = () => {
-    localStorage.removeItem('authToken')
-    localStorage.removeItem('userData')
-    setUser(null)
+    }, 100)
   }
 
   const cartCount = cartItems.reduce((sum, item) => sum + item.quantity, 0)
@@ -396,6 +615,21 @@ export default function VitaPharmWebsite() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-green-50 via-emerald-50 to-teal-50">
+      {/* Toast Container */}
+      <ToastContainer toasts={toasts} onRemove={removeToast} />
+      
+      {/* Confirm Modal */}
+      <ConfirmModal
+        isOpen={confirmModal.isOpen}
+        type={confirmModal.type}
+        title={confirmModal.title}
+        message={confirmModal.message}
+        confirmText={confirmModal.confirmText}
+        cancelText={confirmModal.cancelText}
+        onConfirm={confirmModal.onConfirm || (() => {})}
+        onCancel={confirmModal.onCancel || (() => {})}
+      />
+      
       <Navbar 
         user={user}
         cartCount={cartItems.length}
@@ -414,9 +648,14 @@ export default function VitaPharmWebsite() {
             }
           }, 150)
         }}
+        onProductClick={handleProductClick}
+        onSearchChange={handleGlobalSearch}
       />
       
-      <HeroSection onAddToCart={addToCart} />
+      <HeroSection 
+        onAddToCart={addToCart}
+        onProductClick={handleProductClick}
+      />
 
       <ProductsSection 
         products={products}
@@ -424,7 +663,7 @@ export default function VitaPharmWebsite() {
         categories={categories}
         subcategories={subcategories}
         isLoading={isLoading}
-        searchTerm=""
+        searchTerm={globalSearchTerm}
         activeCategory={activeCategory}
         activeSubcategory={activeSubcategory}
         priceRange={priceRange}
@@ -441,9 +680,15 @@ export default function VitaPharmWebsite() {
         onPriceRangeChange={setPriceRange}
         onMinRatingChange={setMinRating}
         onCurrentPageChange={setCurrentPage}
+        onSearchChange={handleGlobalSearch}
         user={user}
         favorites={favorites}
         onToggleFavorite={toggleFavorite}
+        selectedProduct={selectedProduct}
+        isProductModalOpen={isProductModalOpen}
+        setSelectedProduct={setSelectedProduct}
+        setIsProductModalOpen={setIsProductModalOpen}
+        showToast={showToast}
       />
 
       {/* About Section */}

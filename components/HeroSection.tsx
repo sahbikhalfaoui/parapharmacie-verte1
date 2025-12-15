@@ -1,3 +1,4 @@
+
 import React, { useState, useRef, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -21,9 +22,10 @@ interface Product {
 
 interface HeroSectionProps {
   onAddToCart?: (product: Product) => void
+  onProductClick?: (product: Product) => void
 }
 
-const HeroSection: React.FC<HeroSectionProps> = ({ onAddToCart }) => {
+const HeroSection: React.FC<HeroSectionProps> = ({ onAddToCart, onProductClick }) => {
   const [currentSlide, setCurrentSlide] = useState(0)
   const [isAutoPlaying, setIsAutoPlaying] = useState(true)
   const [progress, setProgress] = useState(0)
@@ -209,6 +211,20 @@ const HeroSection: React.FC<HeroSectionProps> = ({ onAddToCart }) => {
     return () => window.removeEventListener('keydown', handleKeyDown)
   }, [currentSlide])
 
+  const handleProductClick = (product: Product) => {
+    if (onProductClick) {
+      onProductClick(product)
+    }
+    
+    // Scroll to products section
+    setTimeout(() => {
+      const productsSection = document.getElementById('produits')
+      if (productsSection) {
+        productsSection.scrollIntoView({ behavior: 'smooth', block: 'start' })
+      }
+    }, 100)
+  }
+
   return (
     <>
       {/* Hero Carousel Section */}
@@ -253,21 +269,31 @@ const HeroSection: React.FC<HeroSectionProps> = ({ onAddToCart }) => {
                         {banner.description}
                       </p>
                       <div className="flex flex-col sm:flex-row gap-3">
-                        <Button 
-                          size="lg" 
-                          className="bg-green-600 hover:bg-green-700 text-white shadow-xl hover:shadow-2xl transition-all transform hover:scale-105 hover:-translate-y-0.5"
-                          onClick={() => document.getElementById('produits')?.scrollIntoView({ behavior: 'smooth' })}
+                        <motion.div
+                          whileHover={{ scale: 1.05 }}
+                          whileTap={{ scale: 0.95 }}
                         >
-                          Acheter Maintenant
-                        </Button>
-                        <Button 
-                          variant="outline" 
-                          size="lg" 
-                          className="border-2 border-white bg-white/10 backdrop-blur-sm text-white hover:bg-white hover:text-green-700 transition-all transform hover:scale-105"
-                          onClick={() => document.getElementById('about')?.scrollIntoView({ behavior: 'smooth' })}
+                          <Button 
+                            size="lg" 
+                            className="bg-green-600 hover:bg-green-700 text-white shadow-xl hover:shadow-2xl transition-all transform hover:scale-105 hover:-translate-y-0.5"
+                            onClick={() => document.getElementById('produits')?.scrollIntoView({ behavior: 'smooth' })}
+                          >
+                            Acheter Maintenant
+                          </Button>
+                        </motion.div>
+                        <motion.div
+                          whileHover={{ scale: 1.05 }}
+                          whileTap={{ scale: 0.95 }}
                         >
-                          En Savoir Plus
-                        </Button>
+                          <Button 
+                            variant="outline" 
+                            size="lg" 
+                            className="border-2 border-white bg-white/10 backdrop-blur-sm text-white hover:bg-white hover:text-green-700 transition-all transform hover:scale-105"
+                            onClick={() => document.getElementById('about')?.scrollIntoView({ behavior: 'smooth' })}
+                          >
+                            En Savoir Plus
+                          </Button>
+                        </motion.div>
                       </div>
                     </div>
                   </div>
@@ -490,8 +516,9 @@ const HeroSection: React.FC<HeroSectionProps> = ({ onAddToCart }) => {
                       viewport={{ once: true, amount: 0.3 }}
                       transition={{ duration: 0.5, delay: index * 0.1 }}
                       whileHover={{ y: -10, scale: 1.02 }}
-                      className="flex-shrink-0 w-[300px] bg-white rounded-3xl shadow-xl hover:shadow-2xl transition-all duration-300 overflow-hidden group"
+                      className="flex-shrink-0 w-[300px] bg-white rounded-3xl shadow-xl hover:shadow-2xl transition-all duration-300 overflow-hidden group cursor-pointer"
                       style={{ scrollSnapAlign: 'start' }}
+                      onClick={() => handleProductClick(product)}
                     >
                       <div className="relative h-64 bg-gradient-to-br from-gray-100 to-gray-200 overflow-hidden">
                         {/* Promo Badge */}
@@ -613,7 +640,12 @@ const HeroSection: React.FC<HeroSectionProps> = ({ onAddToCart }) => {
                             whileTap={{ scale: 0.9 }}
                           >
                             <Button
-                              onClick={() => onAddToCart && onAddToCart(product)}
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                if (onAddToCart) {
+                                  onAddToCart(product)
+                                }
+                              }}
                               disabled={!product.inStock}
                               size="sm"
                               className="bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white shadow-lg hover:shadow-xl transition-all"

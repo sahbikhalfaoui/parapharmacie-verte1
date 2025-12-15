@@ -22,17 +22,19 @@ import {
   ArrowRight,
   Phone,
   MapPin,
-  Clock3
+  Clock3,
+  Plus,
+  Minus,
+  User,
+  Calendar,
+  Grid3X3,
+  List
 } from "lucide-react"
+import { motion, AnimatePresence } from "framer-motion"
+import { Textarea } from "@/components/ui/textarea"
 
-interface User {
-  id?: string
-  name: string
-  email: string
-  role?: string
-}
-
-interface Product {
+// Define the Product type for the navbar
+interface NavbarProduct {
   _id: string
   name: string
   price: string | number
@@ -41,6 +43,29 @@ interface Product {
   subcategoryName?: string
   rating?: number
   badge?: string
+}
+
+// Define the full Product type for the modal
+interface FullProduct {
+  _id: string
+  name: string
+  price: number
+  image?: string
+  categoryName?: string
+  subcategoryName?: string
+  description?: string
+  inStock?: boolean
+  badge?: string
+  originalPrice?: number
+  averageRating?: number
+  totalReviews?: number
+}
+
+interface User {
+  id?: string
+  name: string
+  email: string
+  role?: string
 }
 
 interface Category {
@@ -65,7 +90,291 @@ interface NavbarProps {
   onCartOpen: () => void
   categories?: Category[]
   onCategorySelect?: (categoryName: string, subcategoryName?: string) => void
+  onProductClick?: (product: NavbarProduct) => void
+  onSearchChange?: (searchTerm: string) => void
+  onAddToCart?: (product: FullProduct) => void
 }
+
+// Product Detail Modal Component for Navbar
+const NavbarProductDetailModal: React.FC<{
+  product: FullProduct | null
+  isOpen: boolean
+  onClose: () => void
+  onAddToCart: (product: FullProduct) => void
+  user: User | null
+}> = ({ product, isOpen, onClose, onAddToCart, user }) => {
+  const [quantity, setQuantity] = useState(1)
+  const [activeTab, setActiveTab] = useState('description')
+  const [isAddingToCart, setIsAddingToCart] = useState(false)
+
+  const handleAddToCart = async () => {
+    if (!product) return
+    
+    setIsAddingToCart(true)
+    try {
+      onAddToCart(product)
+      await new Promise(resolve => setTimeout(resolve, 500))
+      onClose()
+    } finally {
+      setIsAddingToCart(false)
+    }
+  }
+
+  const renderStars = (rating: number = 0) => {
+    return (
+      <div className="flex items-center space-x-0.5">
+        {[...Array(5)].map((_, i) => (
+          <Star key={i} className={`w-4 h-4 ${i < Math.floor(rating) ? "text-yellow-400 fill-current" : "text-gray-300"}`} />
+        ))}
+      </div>
+    )
+  }
+
+  if (!isOpen || !product) return null
+
+  return (
+    <AnimatePresence>
+      {isOpen && (
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          className="fixed inset-0 z-[1000] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4"
+        >
+          <motion.div
+            initial={{ opacity: 0, scale: 0.9, y: 20 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.9, y: 20 }}
+            className="bg-white rounded-2xl max-w-4xl w-full max-h-[90vh] overflow-hidden shadow-2xl"
+          >
+            <div className="flex justify-between items-center p-6 border-b">
+              <h2 className="text-2xl font-bold">Détails du Produit</h2>
+              <motion.div
+                whileHover={{ scale: 1.1, rotate: 90 }}
+                whileTap={{ scale: 0.9 }}
+              >
+                <Button variant="ghost" size="icon" onClick={onClose} className="rounded-full hover:bg-gray-100">
+                  <X className="w-5 h-5" />
+                </Button>
+              </motion.div>
+            </div>
+            
+            <div className="flex flex-col lg:flex-row max-h-[calc(90vh-80px)] overflow-y-auto">
+              <div className="lg:w-2/5 p-6">
+                <div className="relative aspect-square bg-gray-50 rounded-2xl overflow-hidden">
+                  {product.badge && (
+                    <Badge className="absolute top-4 left-4 z-10 bg-red-500 text-white">
+                      {product.badge}
+                    </Badge>
+                  )}
+                  <img 
+                    src={product.image || "/placeholder.jpg"} 
+                    alt={product.name}
+                    className="w-full h-full object-cover"
+                    onError={(e) => {
+                      e.currentTarget.src = "/placeholder.jpg"
+                    }}
+                  />
+                </div>
+              </div>
+              
+              <div className="lg:w-3/5 p-6 space-y-6">
+                <div>
+                  <div className="flex items-center space-x-2 mb-3">
+                    <Badge className="bg-green-100 text-green-800">
+                      {product.categoryName}
+                    </Badge>
+                    {product.subcategoryName && product.subcategoryName !== 'Aucune' && (
+                      <Badge variant="outline" className="border-green-200 text-green-700">
+                        {product.subcategoryName}
+                      </Badge>
+                    )}
+                  </div>
+                  
+                  <h1 className="text-2xl font-bold text-gray-900 mb-3">{product.name}</h1>
+                  
+                  <div className="flex items-center space-x-4">
+                    {renderStars(product.averageRating || 0)}
+                    <span className="text-sm text-gray-600">
+                      {product.averageRating?.toFixed(1)} ({product.totalReviews || 0} avis)
+                    </span>
+                    <Badge className={product.inStock ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800"}>
+                      {product.inStock ? "En stock" : "Rupture"}
+                    </Badge>
+                  </div>
+                </div>
+                
+                <div className="bg-gradient-to-r from-green-50 to-emerald-50 p-6 rounded-xl border border-green-100">
+                  <div className="flex items-baseline space-x-3 mb-4">
+                    <div className="text-3xl font-bold text-green-600">{product.price.toFixed(2)} TND</div>
+                    {product.originalPrice && (
+                      <>
+                        <span className="text-lg text-gray-400 line-through">{product.originalPrice.toFixed(2)} TND</span>
+                        <Badge className="bg-red-100 text-red-800">
+                          -{Math.round((1 - product.price / product.originalPrice) * 100)}%
+                        </Badge>
+                      </>
+                    )}
+                  </div>
+                  
+                  <div className="flex items-center space-x-4">
+                    <div className="flex items-center border border-gray-200 rounded-lg">
+                      <motion.div
+                        whileHover={{ scale: 1.1 }}
+                        whileTap={{ scale: 0.9 }}
+                      >
+                        <Button 
+                          variant="ghost" 
+                          size="icon"
+                          onClick={() => setQuantity(Math.max(1, quantity - 1))}
+                          className="h-10 w-10"
+                        >
+                          <Minus className="w-4 h-4" />
+                        </Button>
+                      </motion.div>
+                      <motion.span 
+                        key={quantity}
+                        initial={{ scale: 0.8 }}
+                        animate={{ scale: 1 }}
+                        className="px-4 py-2 font-medium min-w-[3rem] text-center"
+                      >
+                        {quantity}
+                      </motion.span>
+                      <motion.div
+                        whileHover={{ scale: 1.1 }}
+                        whileTap={{ scale: 0.9 }}
+                      >
+                        <Button 
+                          variant="ghost" 
+                          size="icon"
+                          onClick={() => setQuantity(quantity + 1)}
+                          className="h-10 w-10"
+                        >
+                          <Plus className="w-4 h-4" />
+                        </Button>
+                      </motion.div>
+                    </div>
+                    
+                    <motion.div
+                      whileHover={{ scale: 1.05 }}
+                      whileTap={{ scale: 0.95 }}
+                      className="flex-1"
+                    >
+                      <Button 
+                        onClick={handleAddToCart}
+                        disabled={!product.inStock || isAddingToCart}
+                        className="w-full bg-green-600 hover:bg-green-700 h-10"
+                      >
+                        {isAddingToCart ? (
+                          <div className="flex items-center space-x-2">
+                            <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                            <span>Ajout...</span>
+                          </div>
+                        ) : (
+                          <>
+                            <ShoppingCart className="w-4 h-4 mr-2" />
+                            Ajouter au Panier
+                          </>
+                        )}
+                      </Button>
+                    </motion.div>
+                  </div>
+                </div>
+                
+                <div>
+                  <div className="flex border-b border-gray-200">
+                    {[
+                      { id: 'description', label: 'Description' },
+                      { id: 'details', label: 'Détails' }
+                    ].map((tab) => (
+                      <motion.button
+                        key={tab.id}
+                        whileHover={{ scale: 1.05 }}
+                        whileTap={{ scale: 0.95 }}
+                        onClick={() => setActiveTab(tab.id)}
+                        className={`px-6 py-3 border-b-2 transition-colors ${
+                          activeTab === tab.id
+                            ? 'border-green-500 text-green-600 font-medium'
+                            : 'border-transparent text-gray-600 hover:text-green-600'
+                        }`}
+                      >
+                        {tab.label}
+                      </motion.button>
+                    ))}
+                  </div>
+                  
+                  <div className="pt-6 max-h-96 overflow-y-auto">
+                    {activeTab === 'description' && (
+                      <p className="text-gray-700 leading-relaxed">
+                        {product.description || `Produit ${product.name} de haute qualité.`}
+                      </p>
+                    )}
+                    
+                    {activeTab === 'details' && (
+                      <div className="space-y-4">
+                        <div className="grid grid-cols-2 gap-4">
+                          <div className="space-y-2">
+                            <p className="text-sm font-medium text-gray-500">Catégorie</p>
+                            <p className="font-medium">{product.categoryName}</p>
+                          </div>
+                          {product.subcategoryName && product.subcategoryName !== 'Aucune' && (
+                            <div className="space-y-2">
+                              <p className="text-sm font-medium text-gray-500">Sous-catégorie</p>
+                              <p className="font-medium">{product.subcategoryName}</p>
+                            </div>
+                          )}
+                          <div className="space-y-2">
+                            <p className="text-sm font-medium text-gray-500">Disponibilité</p>
+                            <Badge className={product.inStock ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800"}>
+                              {product.inStock ? "En stock" : "Rupture de stock"}
+                            </Badge>
+                          </div>
+                          <div className="space-y-2">
+                            <p className="text-sm font-medium text-gray-500">Note moyenne</p>
+                            <div className="flex items-center space-x-2">
+                              {renderStars(product.averageRating || 0)}
+                              <span className="font-medium">{product.averageRating?.toFixed(1)}/5</span>
+                            </div>
+                          </div>
+                        </div>
+                        
+                        <div className="mt-6 p-4 bg-gray-50 rounded-lg">
+                          <h4 className="font-semibold mb-2">Options de livraison</h4>
+                          <ul className="space-y-2 text-sm text-gray-600">
+                            <li className="flex items-center space-x-2">
+                              <CheckCircle className="w-4 h-4 text-green-600" />
+                              <span>Livraison standard: 2-3 jours ouvrables</span>
+                            </li>
+                            <li className="flex items-center space-x-2">
+                              <CheckCircle className="w-4 h-4 text-green-600" />
+                              <span>Livraison express disponible</span>
+                            </li>
+                            <li className="flex items-center space-x-2">
+                              <CheckCircle className="w-4 h-4 text-green-600" />
+                              <span>Retour gratuit sous 30 jours</span>
+                            </li>
+                          </ul>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </motion.div>
+        </motion.div>
+      )}
+    </AnimatePresence>
+  )
+}
+
+// CheckCircle icon component
+const CheckCircle = ({ className = "w-5 h-5" }: { className?: string }) => (
+  <svg xmlns="http://www.w3.org/2000/svg" className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+    <polyline points="22 4 12 14.01 9 11.01"></polyline>
+  </svg>
+)
 
 const Navbar: React.FC<NavbarProps> = ({
   user,
@@ -75,15 +384,18 @@ const Navbar: React.FC<NavbarProps> = ({
   onAdminRedirect,
   onCartOpen,
   categories = [],
-  onCategorySelect
+  onCategorySelect,
+  onProductClick,
+  onSearchChange,
+  onAddToCart
 }) => {
   const [isMenuOpen, setIsMenuOpen] = useState(false)
-  const [searchTerm, setSearchTerm] = useState("")
+  const [localSearchTerm, setLocalSearchTerm] = useState("")
   const [searchResults, setSearchResults] = useState<{
-    products: Product[]
+    products: NavbarProduct[]
     categories: Category[]
   }>({ products: [], categories: [] })
-  const [popularProducts, setPopularProducts] = useState<Product[]>([])
+  const [popularProducts, setPopularProducts] = useState<NavbarProduct[]>([])
   const [popularCategories, setPopularCategories] = useState<Category[]>([])
   const [isSearching, setIsSearching] = useState(false)
   const [showSearchResults, setShowSearchResults] = useState(false)
@@ -91,6 +403,8 @@ const Navbar: React.FC<NavbarProps> = ({
   const [scrolled, setScrolled] = useState(false)
   const [hoveredCategory, setHoveredCategory] = useState<string | null>(null)
   const [isMobileCategoriesOpen, setIsMobileCategoriesOpen] = useState(false)
+  const [selectedProduct, setSelectedProduct] = useState<FullProduct | null>(null)
+  const [isProductModalOpen, setIsProductModalOpen] = useState(false)
   const searchRef = useRef<HTMLDivElement>(null)
   const mobileMenuRef = useRef<HTMLDivElement>(null)
 
@@ -122,17 +436,17 @@ const Navbar: React.FC<NavbarProps> = ({
 
   useEffect(() => {
     const delayDebounceFn = setTimeout(() => {
-      if (searchTerm.trim().length >= 2) {
-        performSearch(searchTerm)
+      if (localSearchTerm.trim().length >= 2) {
+        performSearch(localSearchTerm)
         setIsInitialLoad(false)
-      } else if (searchTerm.trim().length === 0) {
+      } else if (localSearchTerm.trim().length === 0) {
         setSearchResults({ products: [], categories: [] })
         setIsInitialLoad(true)
       }
     }, 300)
 
     return () => clearTimeout(delayDebounceFn)
-  }, [searchTerm])
+  }, [localSearchTerm])
 
   const loadPopularItems = async () => {
     try {
@@ -210,32 +524,64 @@ const Navbar: React.FC<NavbarProps> = ({
     }
   }
 
-  const handleProductClick = (productId: string) => {
+  const handleProductClick = async (product: NavbarProduct) => {
+    console.log('Product clicked from navbar:', product)
+    
+    // Convert navbar product to full product
+    const fullProduct: FullProduct = {
+      _id: product._id,
+      name: product.name,
+      price: typeof product.price === 'string' 
+        ? parseFloat(product.price.replace(/[^\d.-]/g, '')) || 0 
+        : product.price,
+      image: product.image || '/placeholder.jpg',
+      categoryName: product.categoryName || 'Non catégorisé',
+      subcategoryName: product.subcategoryName || 'Aucune',
+      description: `Produit ${product.name} de haute qualité.`,
+      inStock: true,
+      badge: product.badge,
+      averageRating: product.rating || 0,
+      totalReviews: 0
+    }
+    
+    // Set the selected product and open the modal
+    setSelectedProduct(fullProduct)
+    setIsProductModalOpen(true)
+    
+    // Also notify parent if needed
+    if (onProductClick) {
+      onProductClick(product)
+    }
+    
+    // Close search results
     setShowSearchResults(false)
-    setSearchTerm("")
-    setIsMenuOpen(false)
-    const productsSection = document.getElementById('produits')
-    if (productsSection) {
-      productsSection.scrollIntoView({ behavior: 'smooth' })
+    setLocalSearchTerm("")
+  }
+
+  const handleAddToCart = (product: FullProduct) => {
+    if (onAddToCart) {
+      onAddToCart(product)
+    }
+  }
+
+  const handleSearchSubmit = (e: React.FormEvent) => {
+    e.preventDefault()
+    if (onSearchChange && localSearchTerm.trim()) {
+      onSearchChange(localSearchTerm)
+      setShowSearchResults(false)
+      setIsMenuOpen(false)
     }
   }
 
   const handleCategoryClick = (categoryName: string, subcategoryName?: string) => {
     setShowSearchResults(false)
-    setSearchTerm("")
+    setLocalSearchTerm("")
     setHoveredCategory(null)
     setIsMenuOpen(false)
     setIsMobileCategoriesOpen(false)
     
     if (onCategorySelect) {
       onCategorySelect(categoryName, subcategoryName)
-    }
-    
-    const productsSection = document.getElementById('produits')
-    if (productsSection) {
-      setTimeout(() => {
-        productsSection.scrollIntoView({ behavior: 'smooth' })
-      }, 100)
     }
   }
 
@@ -330,22 +676,24 @@ const Navbar: React.FC<NavbarProps> = ({
             {/* Search Bar - Hidden on Mobile */}
             <div className="hidden md:block flex-1 max-w-2xl mx-4 lg:mx-8">
               <div className="relative" ref={searchRef}>
-                <div className="relative">
-                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 sm:h-5 sm:w-5 text-gray-400 transition-colors duration-200 peer-focus:text-green-600" />
-                  <Input
-                    type="text"
-                    placeholder="Rechercher produits..."
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    onFocus={() => setShowSearchResults(true)}
-                    className="peer pl-10 pr-4 h-10 sm:h-12 text-sm sm:text-base border-2 border-green-100 focus:border-green-400 focus:ring-2 sm:focus:ring-4 focus:ring-green-100 rounded-xl bg-gray-50 focus:bg-white transition-all duration-300 shadow-sm hover:shadow-md focus:shadow-lg"
-                  />
-                  {isSearching && (
-                    <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
-                      <div className="animate-spin rounded-full h-4 w-4 sm:h-5 sm:w-5 border-2 border-green-600 border-t-transparent"></div>
-                    </div>
-                  )}
-                </div>
+                <form onSubmit={handleSearchSubmit}>
+                  <div className="relative">
+                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 sm:h-5 sm:w-5 text-gray-400 transition-colors duration-200 peer-focus:text-green-600" />
+                    <Input
+                      type="text"
+                      placeholder="Rechercher produits..."
+                      value={localSearchTerm}
+                      onChange={(e) => setLocalSearchTerm(e.target.value)}
+                      onFocus={() => setShowSearchResults(true)}
+                      className="peer pl-10 pr-4 h-10 sm:h-12 text-sm sm:text-base border-2 border-green-100 focus:border-green-400 focus:ring-2 sm:focus:ring-4 focus:ring-green-100 rounded-xl bg-gray-50 focus:bg-white transition-all duration-300 shadow-sm hover:shadow-md focus:shadow-lg"
+                    />
+                    {isSearching && (
+                      <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
+                        <div className="animate-spin rounded-full h-4 w-4 sm:h-5 sm:w-5 border-2 border-green-600 border-t-transparent"></div>
+                      </div>
+                    )}
+                  </div>
+                </form>
 
                 {/* Search Results Dropdown */}
                 {showSearchResults && (
@@ -359,7 +707,6 @@ const Navbar: React.FC<NavbarProps> = ({
                     }}
                   >
                     <div className="overflow-y-auto max-h-[80vh]">
-                      {/* Rest of search results dropdown remains same */}
                       <div className="bg-gradient-to-r from-green-600 via-emerald-600 to-green-700 p-4 sm:p-6 text-white">
                         <div className="flex items-center justify-between">
                           <div className="flex items-center space-x-2 sm:space-x-3">
@@ -374,7 +721,7 @@ const Navbar: React.FC<NavbarProps> = ({
                                 <div>
                                   <h3 className="text-base sm:text-lg font-bold">Résultats de recherche</h3>
                                   <p className="text-xs sm:text-sm text-green-50 mt-0.5">
-                                    {displayProducts.length + displayCategories.length} résultats pour "{searchTerm}"
+                                    {displayProducts.length + displayCategories.length} résultats pour "{localSearchTerm}"
                                   </p>
                                 </div>
                               </>
@@ -437,10 +784,16 @@ const Navbar: React.FC<NavbarProps> = ({
                             </div>
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                               {displayProducts.map((product) => (
-                                <button
+                                <motion.button
                                   key={product._id}
-                                  onClick={() => handleProductClick(product._id)}
-                                  className="flex items-center space-x-3 sm:space-x-4 p-3 sm:p-4 hover:bg-gradient-to-r hover:from-green-50 hover:to-emerald-50 rounded-xl transition-all duration-200 group border border-gray-100 hover:border-green-200 hover:shadow-md text-left"
+                                  onClick={(e) => {
+                                    e.preventDefault()
+                                    e.stopPropagation()
+                                    handleProductClick(product)
+                                  }}
+                                  whileHover={{ scale: 1.02 }}
+                                  whileTap={{ scale: 0.98 }}
+                                  className="flex items-center space-x-3 sm:space-x-4 p-3 sm:p-4 hover:bg-gradient-to-r hover:from-green-50 hover:to-emerald-50 rounded-xl transition-all duration-200 group border border-gray-100 hover:border-green-200 hover:shadow-md text-left w-full"
                                 >
                                   <div className="relative w-16 h-16 sm:w-20 sm:h-20 bg-gradient-to-br from-gray-100 to-gray-200 rounded-xl overflow-hidden flex-shrink-0 border-2 border-gray-200 group-hover:border-green-300 transition-colors">
                                     <img 
@@ -474,14 +827,14 @@ const Navbar: React.FC<NavbarProps> = ({
                                       <ArrowRight className="w-4 h-4 text-gray-400 group-hover:text-green-600 transform group-hover:translate-x-1 transition-all" />
                                     </div>
                                   </div>
-                                </button>
+                                </motion.button>
                               ))}
                             </div>
                           </div>
                         )}
                       </div>
 
-                      {!isInitialLoad && searchTerm.length >= 2 && displayProducts.length === 0 && displayCategories.length === 0 && !isSearching && (
+                      {!isInitialLoad && localSearchTerm.length >= 2 && displayProducts.length === 0 && displayCategories.length === 0 && !isSearching && (
                         <div className="p-6 sm:p-12 text-center">
                           <div className="w-16 h-16 sm:w-24 sm:h-24 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4 sm:mb-6">
                             <Search className="w-8 h-8 sm:w-12 sm:h-12 text-gray-400" />
@@ -489,7 +842,7 @@ const Navbar: React.FC<NavbarProps> = ({
                           <h3 className="text-lg sm:text-xl font-bold text-gray-900 mb-2">Aucun résultat trouvé</h3>
                           <p className="text-gray-500 text-sm sm:text-base mb-4 sm:mb-6">Essayez d'autres mots-clés ou parcourez nos catégories populaires</p>
                           <Button
-                            onClick={() => setSearchTerm("")}
+                            onClick={() => setLocalSearchTerm("")}
                             className="bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white rounded-xl shadow-lg hover:shadow-xl transition-all duration-200 text-sm sm:text-base"
                           >
                             Réinitialiser la recherche
@@ -595,23 +948,25 @@ const Navbar: React.FC<NavbarProps> = ({
           {/* Mobile Search Bar - Always visible on mobile */}
           <div className="md:hidden mb-3">
             <div className="relative" ref={searchRef}>
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400 transition-colors duration-200 peer-focus:text-green-600" />
-                <Input
-                  id="mobile-search-input"
-                  type="text"
-                  placeholder="Rechercher produits..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  onFocus={() => setShowSearchResults(true)}
-                  className="peer pl-10 pr-4 h-10 text-sm border-2 border-green-100 focus:border-green-400 focus:ring-2 focus:ring-green-100 rounded-xl bg-gray-50 focus:bg-white transition-all duration-300 shadow-sm hover:shadow-md focus:shadow-lg"
-                />
-                {isSearching && (
-                  <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
-                    <div className="animate-spin rounded-full h-4 w-4 border-2 border-green-600 border-t-transparent"></div>
-                  </div>
-                )}
-              </div>
+              <form onSubmit={handleSearchSubmit}>
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400 transition-colors duration-200 peer-focus:text-green-600" />
+                  <Input
+                    id="mobile-search-input"
+                    type="text"
+                    placeholder="Rechercher produits..."
+                    value={localSearchTerm}
+                    onChange={(e) => setLocalSearchTerm(e.target.value)}
+                    onFocus={() => setShowSearchResults(true)}
+                    className="peer pl-10 pr-4 h-10 text-sm border-2 border-green-100 focus:border-green-400 focus:ring-2 focus:ring-green-100 rounded-xl bg-gray-50 focus:bg-white transition-all duration-300 shadow-sm hover:shadow-md focus:shadow-lg"
+                  />
+                  {isSearching && (
+                    <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
+                      <div className="animate-spin rounded-full h-4 w-4 border-2 border-green-600 border-t-transparent"></div>
+                    </div>
+                  )}
+                </div>
+              </form>
             </div>
           </div>
 
@@ -678,7 +1033,6 @@ const Navbar: React.FC<NavbarProps> = ({
                                 <ChevronDown className="w-3 h-3" />
                               )}
                             </button>
-                            {/* Subcategories could be nested here if needed */}
                           </div>
                         ))}
                       </div>
@@ -968,7 +1322,7 @@ const Navbar: React.FC<NavbarProps> = ({
                 <Search className="w-5 h-5 text-green-600" />
                 <div>
                   <h3 className="font-bold text-gray-900">
-                    {isInitialLoad ? 'Produits populaires' : `Résultats pour "${searchTerm}"`}
+                    {isInitialLoad ? 'Produits populaires' : `Résultats pour "${localSearchTerm}"`}
                   </h3>
                   <p className="text-sm text-gray-500">
                     {displayProducts.length + displayCategories.length} résultats
@@ -1018,9 +1372,15 @@ const Navbar: React.FC<NavbarProps> = ({
                   </h4>
                   <div className="space-y-3">
                     {displayProducts.map((product) => (
-                      <button
+                      <motion.button
                         key={product._id}
-                        onClick={() => handleProductClick(product._id)}
+                        onClick={(e) => {
+                          e.preventDefault()
+                          e.stopPropagation()
+                          handleProductClick(product)
+                        }}
+                        whileHover={{ scale: 1.02 }}
+                        whileTap={{ scale: 0.98 }}
                         className="w-full flex items-center space-x-3 p-3 bg-gray-50 hover:bg-green-50 rounded-xl transition-colors border border-gray-100 text-left"
                       >
                         <div className="relative w-16 h-16 bg-gradient-to-br from-gray-100 to-gray-200 rounded-lg overflow-hidden flex-shrink-0">
@@ -1044,7 +1404,7 @@ const Navbar: React.FC<NavbarProps> = ({
                             )}
                           </div>
                         </div>
-                      </button>
+                      </motion.button>
                     ))}
                   </div>
                 </div>
@@ -1053,6 +1413,18 @@ const Navbar: React.FC<NavbarProps> = ({
           </div>
         </div>
       )}
+
+      {/* Product Detail Modal for Navbar */}
+      <NavbarProductDetailModal 
+        product={selectedProduct}
+        isOpen={isProductModalOpen}
+        onClose={() => {
+          setIsProductModalOpen(false)
+          setSelectedProduct(null)
+        }}
+        onAddToCart={handleAddToCart}
+        user={user}
+      />
 
       <style jsx global>{`
         .scrollbar-hide {
