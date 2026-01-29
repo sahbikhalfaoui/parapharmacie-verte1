@@ -896,7 +896,7 @@ export default function VitaPharmWebsite() {
               <Card className="h-full border-2 border-green-100 overflow-hidden shadow-xl">
                 <CardContent className="p-0 h-full">
                   <iframe
-                    src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3195.4827829916147!2d10.517659315394!3d36.77777797994!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x12fd0b0e3e3e3e3e%3A0x1234567890abcdef!2sRue%20El%20Moez%2C%20Grombalia!5e0!3m2!1sen!2stn!4v1234567890123"
+                    src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3195.4827829916147!2d10.517659315394!3d36.77777797994!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x12fd5bf511da75e3%3A0x4c67b209b1ad254e!2sParapharmacie%20Biopharma!5e0!3m2!1sen!2stn!4v1234567890123"
                     width="100%"
                     height="100%"
                     style={{ border: 0, minHeight: '400px' }}

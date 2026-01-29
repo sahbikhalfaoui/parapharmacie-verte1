@@ -607,10 +607,15 @@ const Navbar: React.FC<NavbarProps> = ({
                 <Phone className="w-3 h-3 sm:w-4 sm:h-4" />
                 <span className="text-xs sm:text-sm">+216 26 744 525</span>
               </div>
-              <div className="hidden xs:flex items-center space-x-1 sm:space-x-2 hover:text-green-600 transition-colors cursor-pointer flex-shrink-0">
+              <a 
+                href="https://maps.app.goo.gl/66ZSb1mcWrwerZqm6" 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="hidden xs:flex items-center space-x-1 sm:space-x-2 hover:text-green-600 transition-colors cursor-pointer flex-shrink-0"
+              >
                 <MapPin className="w-3 h-3 sm:w-4 sm:h-4" />
                 <span className="text-xs sm:text-sm">Grombalia, Tunisia</span>
-              </div>
+              </a>
               <div className="hidden sm:flex items-center space-x-1 sm:space-x-2 hover:text-green-600 transition-colors cursor-pointer flex-shrink-0">
                 <Clock3 className="w-3 h-3 sm:w-4 sm:h-4" />
                 <span className="text-xs sm:text-sm">Lun-Sam: 8h-20h</span>

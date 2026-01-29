@@ -58,8 +58,7 @@ export const apiRequest = async <T>(endpoint: string, options: RequestInit = {})
     const response = await fetch(`${API_BASE_URL}${endpoint}`, {
       ...options,
       headers,
-      // Remove credentials: 'include' or change to 'same-origin'
-      credentials: 'same-origin'
+      credentials: 'include'
     })
 
     if (!response.ok) {
