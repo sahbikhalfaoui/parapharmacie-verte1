@@ -25,6 +25,7 @@ export const AuthCheck: React.FC<AuthCheckProps> = ({ onAuthenticated }) => {
       const response = await fetch(`${API_BASE_URL}/auth/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
         body: JSON.stringify({ email, password }),
       })
 
@@ -38,6 +39,8 @@ export const AuthCheck: React.FC<AuthCheckProps> = ({ onAuthenticated }) => {
         throw new Error('Accès réservé aux administrateurs')
       }
 
+      console.log('Login successful, token:', data.token?.substring(0, 20) + '...')
+      
       localStorage.setItem('authToken', data.token)
       localStorage.setItem('adminToken', data.token)
       localStorage.setItem('userData', JSON.stringify(data.user))

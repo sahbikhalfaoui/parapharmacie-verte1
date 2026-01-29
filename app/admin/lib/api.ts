@@ -42,12 +42,18 @@ export const clearAuthToken = (): void => {
 // API helpers with better error handling
 export const apiRequest = async <T>(endpoint: string, options: RequestInit = {}): Promise<T> => {
   const token = getAuthToken()
+  
+  console.log('API Request:', endpoint)
+  console.log('Token available:', token ? 'Yes' : 'No')
+  
   const headers: HeadersInit = {
     ...options.headers
   }
 
   if (token) {
     headers['Authorization'] = `Bearer ${token}`
+  } else {
+    console.warn('No authentication token found!')
   }
 
   if (!(options.body instanceof FormData)) {
@@ -64,8 +70,8 @@ export const apiRequest = async <T>(endpoint: string, options: RequestInit = {})
     if (!response.ok) {
       // Don't automatically logout on 401 - might be temporary
       if (response.status === 401) {
-        console.warn('Authentication issue - token might be expired')
-        // Don't clear tokens immediately, let the component handle it
+        console.error('Authentication failed - token might be expired or invalid')
+        console.log('Current token:', token?.substring(0, 20) + '...')
         throw new Error('Authentication issue - please login again')
       }
       
@@ -75,7 +81,7 @@ export const apiRequest = async <T>(endpoint: string, options: RequestInit = {})
       let errorMessage = `HTTP error! status: ${response.status}`
       try {
         const errorData = JSON.parse(errorText)
-        errorMessage = errorData.error || errorMessage
+        errorMessage = errorData.error || errorData.message || errorMessage
       } catch {
         // If not JSON, use the text as is
       }
