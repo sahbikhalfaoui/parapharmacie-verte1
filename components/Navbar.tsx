@@ -1,5 +1,6 @@
 "use client"
 import React, { useState, useEffect, useRef } from "react"
+import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
@@ -389,6 +390,7 @@ const Navbar: React.FC<NavbarProps> = ({
   onSearchChange,
   onAddToCart
 }) => {
+  const router = useRouter()
   const [isMenuOpen, setIsMenuOpen] = useState(false)
   const [localSearchTerm, setLocalSearchTerm] = useState("")
   const [searchResults, setSearchResults] = useState<{
@@ -526,36 +528,24 @@ const Navbar: React.FC<NavbarProps> = ({
 
   const handleProductClick = async (product: NavbarProduct) => {
     console.log('Product clicked from navbar:', product)
+    console.log('Navigating to:', `/product/${product._id}`)
     
-    // Convert navbar product to full product
-    const fullProduct: FullProduct = {
-      _id: product._id,
-      name: product.name,
-      price: typeof product.price === 'string' 
-        ? parseFloat(product.price.replace(/[^\d.-]/g, '')) || 0 
-        : product.price,
-      image: product.image || '/placeholder.jpg',
-      categoryName: product.categoryName || 'Non catégorisé',
-      subcategoryName: product.subcategoryName || 'Aucune',
-      description: `Produit ${product.name} de haute qualité.`,
-      inStock: true,
-      badge: product.badge,
-      averageRating: product.rating || 0,
-      totalReviews: 0
+    // Close search results first
+    setShowSearchResults(false)
+    setLocalSearchTerm("")
+    
+    // Navigate to product page
+    try {
+      await router.push(`/product/${product._id}`)
+      console.log('Navigation complete')
+    } catch (error) {
+      console.error('Navigation error:', error)
     }
-    
-    // Set the selected product and open the modal
-    setSelectedProduct(fullProduct)
-    setIsProductModalOpen(true)
     
     // Also notify parent if needed
     if (onProductClick) {
       onProductClick(product)
     }
-    
-    // Close search results
-    setShowSearchResults(false)
-    setLocalSearchTerm("")
   }
 
   const handleAddToCart = (product: FullProduct) => {
@@ -662,10 +652,10 @@ const Navbar: React.FC<NavbarProps> = ({
             {/* Desktop Navigation Links - Hidden on Mobile */}
             <div className="hidden lg:flex items-center space-x-1">
               {[
-                { name: "Accueil", href: "#accueil" },
-                { name: "Produits", href: "#produits" },
-                { name: "À Propos", href: "#about" },
-                { name: "Contact", href: "#contact" }
+                { name: "Accueil", href: "/" },
+                { name: "Produits", href: "/#produits" },
+                { name: "À Propos", href: "/#about" },
+                { name: "Contact", href: "/#contact" }
               ].map((item) => (
                 <a 
                   key={item.name} 
@@ -741,39 +731,9 @@ const Navbar: React.FC<NavbarProps> = ({
                         </div>
                       </div>
 
-                      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6 p-4 sm:p-6">
-                        {displayCategories.length > 0 && (
-                          <div className="lg:col-span-1">
-                            <div className="flex items-center space-x-2 mb-3 sm:mb-4">
-                              <Package className="w-4 h-4 sm:w-5 sm:h-5 text-green-600" />
-                              <h4 className="text-xs sm:text-sm font-bold text-gray-900 uppercase tracking-wide">
-                                {isInitialLoad ? 'Catégories Populaires' : 'Catégories'}
-                              </h4>
-                            </div>
-                            <div className="space-y-2">
-                              {displayCategories.map((category) => (
-                                <button
-                                  key={category._id}
-                                  onClick={() => handleCategoryClick(category.name)}
-                                  className="w-full flex items-center justify-between p-3 sm:p-4 hover:bg-gradient-to-r hover:from-green-50 hover:to-emerald-50 rounded-xl transition-all duration-200 group border border-gray-100 hover:border-green-200 hover:shadow-md"
-                                >
-                                  <div className="flex items-center space-x-2 sm:space-x-3">
-                                    <div className="w-8 h-8 sm:w-10 sm:h-10 bg-green-100 rounded-lg flex items-center justify-center group-hover:bg-green-200 transition-colors">
-                                      <Tag className="w-4 h-4 sm:w-5 sm:h-5 text-green-600" />
-                                    </div>
-                                    <span className="text-xs sm:text-sm font-semibold text-gray-700 group-hover:text-green-600 transition-colors">
-                                      {category.name}
-                                    </span>
-                                  </div>
-                                  <ChevronRight className="w-4 h-4 sm:w-5 sm:h-5 text-gray-400 group-hover:text-green-600 transform group-hover:translate-x-1 transition-all" />
-                                </button>
-                              ))}
-                            </div>
-                          </div>
-                        )}
-
+                      <div className="p-4 sm:p-6">
                         {displayProducts.length > 0 && (
-                          <div className={displayCategories.length > 0 ? "lg:col-span-2" : "lg:col-span-3"}>
+                          <div>
                             <div className="flex items-center space-x-2 mb-3 sm:mb-4">
                               {isInitialLoad ? (
                                 <>
@@ -789,16 +749,14 @@ const Navbar: React.FC<NavbarProps> = ({
                             </div>
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                               {displayProducts.map((product) => (
-                                <motion.button
+                                <motion.div
                                   key={product._id}
-                                  onClick={(e) => {
-                                    e.preventDefault()
-                                    e.stopPropagation()
-                                    handleProductClick(product)
+                                  onClick={() => {
+                                    window.location.href = `/product/${product._id}`
                                   }}
                                   whileHover={{ scale: 1.02 }}
                                   whileTap={{ scale: 0.98 }}
-                                  className="flex items-center space-x-3 sm:space-x-4 p-3 sm:p-4 hover:bg-gradient-to-r hover:from-green-50 hover:to-emerald-50 rounded-xl transition-all duration-200 group border border-gray-100 hover:border-green-200 hover:shadow-md text-left w-full"
+                                  className="flex items-center space-x-3 sm:space-x-4 p-3 sm:p-4 hover:bg-gradient-to-r hover:from-green-50 hover:to-emerald-50 rounded-xl transition-all duration-200 group border border-gray-100 hover:border-green-200 hover:shadow-md cursor-pointer"
                                 >
                                   <div className="relative w-16 h-16 sm:w-20 sm:h-20 bg-gradient-to-br from-gray-100 to-gray-200 rounded-xl overflow-hidden flex-shrink-0 border-2 border-gray-200 group-hover:border-green-300 transition-colors">
                                     <img 
@@ -832,14 +790,14 @@ const Navbar: React.FC<NavbarProps> = ({
                                       <ArrowRight className="w-4 h-4 text-gray-400 group-hover:text-green-600 transform group-hover:translate-x-1 transition-all" />
                                     </div>
                                   </div>
-                                </motion.button>
+                                </motion.div>
                               ))}
                             </div>
                           </div>
                         )}
                       </div>
 
-                      {!isInitialLoad && localSearchTerm.length >= 2 && displayProducts.length === 0 && displayCategories.length === 0 && !isSearching && (
+                      {!isInitialLoad && localSearchTerm.length >= 2 && displayProducts.length === 0 && !isSearching && (
                         <div className="p-6 sm:p-12 text-center">
                           <div className="w-16 h-16 sm:w-24 sm:h-24 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4 sm:mb-6">
                             <Search className="w-8 h-8 sm:w-12 sm:h-12 text-gray-400" />
@@ -982,10 +940,10 @@ const Navbar: React.FC<NavbarProps> = ({
                 {/* Mobile Navigation Links */}
                 <div className="space-y-2">
                   {[
-                    { name: "Accueil", href: "#accueil" },
-                    { name: "Produits", href: "#produits" },
-                    { name: "À Propos", href: "#about" },
-                    { name: "Contact", href: "#contact" }
+                    { name: "Accueil", href: "/" },
+                    { name: "Produits", href: "/#produits" },
+                    { name: "À Propos", href: "/#about" },
+                    { name: "Contact", href: "/#contact" }
                   ].map((item) => (
                     <a 
                       key={item.name} 
@@ -1342,33 +1300,7 @@ const Navbar: React.FC<NavbarProps> = ({
               </button>
             </div>
 
-            <div className="p-4 space-y-6">
-              {displayCategories.length > 0 && (
-                <div>
-                  <h4 className="text-sm font-bold text-gray-900 mb-3 flex items-center space-x-2">
-                    <Package className="w-4 h-4 text-green-600" />
-                    <span>Catégories</span>
-                  </h4>
-                  <div className="space-y-2">
-                    {displayCategories.map((category) => (
-                      <button
-                        key={category._id}
-                        onClick={() => handleCategoryClick(category.name)}
-                        className="w-full flex items-center justify-between p-3 bg-gray-50 hover:bg-green-50 rounded-xl transition-colors border border-gray-100"
-                      >
-                        <div className="flex items-center space-x-3">
-                          <div className="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center">
-                            <Tag className="w-5 h-5 text-green-600" />
-                          </div>
-                          <span className="font-medium text-gray-700">{category.name}</span>
-                        </div>
-                        <ChevronRight className="w-5 h-5 text-gray-400" />
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              )}
-
+            <div className="p-4">
               {displayProducts.length > 0 && (
                 <div>
                   <h4 className="text-sm font-bold text-gray-900 mb-3 flex items-center space-x-2">
@@ -1377,16 +1309,14 @@ const Navbar: React.FC<NavbarProps> = ({
                   </h4>
                   <div className="space-y-3">
                     {displayProducts.map((product) => (
-                      <motion.button
+                      <motion.div
                         key={product._id}
-                        onClick={(e) => {
-                          e.preventDefault()
-                          e.stopPropagation()
-                          handleProductClick(product)
+                        onClick={() => {
+                          window.location.href = `/product/${product._id}`
                         }}
                         whileHover={{ scale: 1.02 }}
                         whileTap={{ scale: 0.98 }}
-                        className="w-full flex items-center space-x-3 p-3 bg-gray-50 hover:bg-green-50 rounded-xl transition-colors border border-gray-100 text-left"
+                        className="w-full flex items-center space-x-3 p-3 bg-gray-50 hover:bg-green-50 rounded-xl transition-colors border border-gray-100 cursor-pointer"
                       >
                         <div className="relative w-16 h-16 bg-gradient-to-br from-gray-100 to-gray-200 rounded-lg overflow-hidden flex-shrink-0">
                           <img 
@@ -1409,7 +1339,7 @@ const Navbar: React.FC<NavbarProps> = ({
                             )}
                           </div>
                         </div>
-                      </motion.button>
+                      </motion.div>
                     ))}
                   </div>
                 </div>

@@ -5,9 +5,17 @@ import { Analytics } from '@vercel/analytics/next'
 import './globals.css'
 
 export const metadata: Metadata = {
-  title: 'BioPharma',
-  description: 'Biopharma Parapharmacie',
-  generator: 'Parpharmacie',
+  title: 'BioPharma - Votre Parapharmacie en Ligne',
+  description: 'BioPharma - Votre partenaire santé de confiance pour une vie plus saine et équilibrée. Produits de qualité, livraison rapide.',
+  generator: 'Parapharmacie',
+  viewport: {
+    width: 'device-width',
+    initialScale: 1,
+    maximumScale: 5,
+    userScalable: true,
+  },
+  themeColor: '#16a34a',
+  manifest: '/manifest.json',
 }
 
 export default function RootLayout({

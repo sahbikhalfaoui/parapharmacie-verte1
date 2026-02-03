@@ -1,5 +1,6 @@
 "use client"
 import React, { useState, useEffect, useMemo } from "react"
+import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -599,6 +600,7 @@ const ProductsSection: React.FC<ProductsSectionProps> = ({
   setIsProductModalOpen,
   showToast
 }) => {
+  const router = useRouter()
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid')
   const [hoveredCategory, setHoveredCategory] = useState<string | null>(null)
   const [addingToCartId, setAddingToCartId] = useState<string | null>(null)
@@ -1049,10 +1051,7 @@ const ProductsSection: React.FC<ProductsSectionProps> = ({
                 >
                   <Card 
                     className="group hover:shadow-xl transition-all duration-300 cursor-pointer overflow-hidden border-green-100"
-                    onClick={() => {
-                      setSelectedProduct(product)
-                      setIsProductModalOpen(true)
-                    }}
+                    onClick={() => router.push(`/product/${product._id}`)}
                   >
                     <div className="relative aspect-square overflow-hidden bg-gray-50">
                       {product.badge && (
@@ -1148,10 +1147,7 @@ const ProductsSection: React.FC<ProductsSectionProps> = ({
                 >
                   <Card 
                     className="group hover:shadow-xl transition-all duration-300 cursor-pointer overflow-hidden border-green-100"
-                    onClick={() => {
-                      setSelectedProduct(product)
-                      setIsProductModalOpen(true)
-                    }}
+                    onClick={() => router.push(`/product/${product._id}`)}
                   >
                     <div className="flex">
                       <div className="relative w-32 h-32 flex-shrink-0 bg-gray-50">
