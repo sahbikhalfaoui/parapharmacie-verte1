@@ -4,6 +4,7 @@ import { useParams, useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent } from "@/components/ui/card"
+import { Textarea } from "@/components/ui/textarea"
 import { motion } from "framer-motion"
 import Navbar from "@/components/Navbar"
 import { 
@@ -14,7 +15,8 @@ import {
   ArrowLeft,
   Calendar,
   User as UserIcon,
-  Heart
+  Heart,
+  Send
 } from "lucide-react"
 
 interface Product {
@@ -72,6 +74,10 @@ export default function ProductPage() {
   const [cartCount, setCartCount] = useState(0)
   const [categories, setCategories] = useState<Category[]>([])
   const [showAuthModal, setShowAuthModal] = useState(false)
+  const [newReviewRating, setNewReviewRating] = useState(0)
+  const [newReviewComment, setNewReviewComment] = useState("")
+  const [isSubmittingReview, setIsSubmittingReview] = useState(false)
+  const [hoverRating, setHoverRating] = useState(0)
 
   useEffect(() => {
     loadProduct()
@@ -232,6 +238,58 @@ export default function ProductPage() {
       month: 'long',
       day: 'numeric'
     })
+  }
+
+  const handleSubmitReview = async () => {
+    if (!user) {
+      alert('Veuillez vous connecter pour laisser un avis')
+      router.push('/?auth=login')
+      return
+    }
+
+    if (newReviewRating === 0) {
+      alert('Veuillez sélectionner une note')
+      return
+    }
+
+    if (!newReviewComment.trim()) {
+      alert('Veuillez écrire un commentaire')
+      return
+    }
+
+    setIsSubmittingReview(true)
+    try {
+      const token = localStorage.getItem('authToken')
+      const response = await fetch(`https://biopharma-backend.onrender.com/api/products/${productId}/reviews`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          rating: newReviewRating,
+          comment: newReviewComment
+        })
+      })
+
+      if (response.ok) {
+        // Reset form
+        setNewReviewRating(0)
+        setNewReviewComment("")
+        // Reload reviews and product to update average rating
+        loadReviews()
+        loadProduct()
+        alert('Avis ajouté avec succès!')
+      } else {
+        const data = await response.json()
+        alert(data.message || 'Erreur lors de l\'ajout de l\'avis')
+      }
+    } catch (error) {
+      console.error('Error submitting review:', error)
+      alert('Erreur lors de l\'ajout de l\'avis')
+    } finally {
+      setIsSubmittingReview(false)
+    }
   }
 
   if (isLoading) {
@@ -471,6 +529,88 @@ export default function ProductPage() {
                           Aucun avis pour le moment
                         </div>
                       )}
+
+                      {/* Add Review Form */}
+                      <div className="border-t pt-6 mt-6">
+                        <h3 className="text-lg font-semibold mb-4">Laisser un avis</h3>
+                        
+                        {/* Star Rating Input */}
+                        <div className="mb-4">
+                          <label className="block text-sm font-medium text-gray-700 mb-2">Votre note</label>
+                          <div className="flex items-center space-x-1">
+                            {[1, 2, 3, 4, 5].map((star) => (
+                              <motion.button
+                                key={star}
+                                type="button"
+                                whileHover={{ scale: 1.2 }}
+                                whileTap={{ scale: 0.9 }}
+                                onMouseEnter={() => setHoverRating(star)}
+                                onMouseLeave={() => setHoverRating(0)}
+                                onClick={() => setNewReviewRating(star)}
+                                className="focus:outline-none"
+                              >
+                                <Star 
+                                  className={`w-8 h-8 transition-colors ${
+                                    star <= (hoverRating || newReviewRating) 
+                                      ? "text-yellow-400 fill-current" 
+                                      : "text-gray-300"
+                                  }`} 
+                                />
+                              </motion.button>
+                            ))}
+                            <span className="ml-2 text-sm text-gray-600">
+                              {newReviewRating > 0 ? `${newReviewRating}/5` : 'Sélectionnez une note'}
+                            </span>
+                          </div>
+                        </div>
+
+                        {/* Comment Input */}
+                        <div className="mb-4">
+                          <label className="block text-sm font-medium text-gray-700 mb-2">Votre commentaire</label>
+                          <Textarea
+                            value={newReviewComment}
+                            onChange={(e) => setNewReviewComment(e.target.value)}
+                            placeholder="Partagez votre expérience avec ce produit..."
+                            className="min-h-[100px] border-gray-300 focus:border-green-500 focus:ring-green-500"
+                          />
+                        </div>
+
+                        {/* Submit Button */}
+                        <motion.div
+                          whileHover={{ scale: 1.02 }}
+                          whileTap={{ scale: 0.98 }}
+                        >
+                          <Button
+                            onClick={handleSubmitReview}
+                            disabled={isSubmittingReview || newReviewRating === 0 || !newReviewComment.trim()}
+                            className="w-full sm:w-auto bg-green-600 hover:bg-green-700 text-white"
+                          >
+                            {isSubmittingReview ? (
+                              <div className="flex items-center space-x-2">
+                                <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                                <span>Envoi...</span>
+                              </div>
+                            ) : (
+                              <>
+                                <Send className="w-4 h-4 mr-2" />
+                                Envoyer l'avis
+                              </>
+                            )}
+                          </Button>
+                        </motion.div>
+
+                        {!user && (
+                          <p className="mt-3 text-sm text-gray-500">
+                            <button 
+                              onClick={() => router.push('/?auth=login')}
+                              className="text-green-600 hover:underline font-medium"
+                            >
+                              Connectez-vous
+                            </button>
+                            {' '}pour laisser un avis
+                          </p>
+                        )}
+                      </div>
                     </div>
                   )}
                 </div>
