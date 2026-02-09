@@ -94,6 +94,7 @@ interface NavbarProps {
   onProductClick?: (product: NavbarProduct) => void
   onSearchChange?: (searchTerm: string) => void
   onAddToCart?: (product: FullProduct) => void
+  minimal?: boolean
 }
 
 // Product Detail Modal Component for Navbar
@@ -388,7 +389,8 @@ const Navbar: React.FC<NavbarProps> = ({
   onCategorySelect,
   onProductClick,
   onSearchChange,
-  onAddToCart
+  onAddToCart,
+  minimal = false
 }) => {
   const router = useRouter()
   const [isMenuOpen, setIsMenuOpen] = useState(false)
@@ -585,6 +587,75 @@ const Navbar: React.FC<NavbarProps> = ({
 
   const displayProducts = isInitialLoad ? popularProducts : searchResults.products
   const displayCategories = isInitialLoad ? popularCategories : searchResults.categories
+
+  // Minimal navbar for product pages
+  if (minimal) {
+    return (
+      <nav className={`sticky top-0 z-50 transition-all duration-500 ${
+        scrolled 
+          ? 'bg-white shadow-xl border-b border-green-200' 
+          : 'bg-white/95 backdrop-blur-md border-b border-green-100 shadow-lg'
+      }`}>
+        <div className="max-w-7xl mx-auto px-3 sm:px-4 lg:px-8">
+          <div className="flex justify-between items-center h-16 sm:h-20">
+            {/* Home Button */}
+            <Button
+              variant="ghost"
+              onClick={() => router.push('/')}
+              className="flex items-center space-x-2 hover:bg-green-50 hover:text-green-600 rounded-xl transition-all duration-300"
+            >
+              <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl flex items-center justify-center">
+                <img 
+                  src="/logo-icon_vff.png" 
+                  alt="BioPharma Logo" 
+                  className="w-full h-full object-contain"
+                />
+              </div>
+              <span className="hidden sm:block text-lg font-bold bg-gradient-to-r from-green-700 via-emerald-600 to-green-600 bg-clip-text text-transparent">
+                BioPharma
+              </span>
+            </Button>
+
+            {/* Right Actions: Cart & Profile */}
+            <div className="flex items-center space-x-2 sm:space-x-3">
+              {/* Cart Button */}
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                className="relative hover:bg-green-50 hover:text-green-600 rounded-xl transition-all duration-300 hover:scale-105" 
+                onClick={onCartOpen}
+              >
+                <ShoppingCart className="h-5 w-5 sm:h-6 sm:w-6" />
+                {cartCount > 0 && (
+                  <span className="absolute -top-1.5 -right-1.5 sm:-top-2 sm:-right-2 bg-gradient-to-r from-red-600 to-red-500 text-white text-xs rounded-full w-5 h-5 sm:w-6 sm:h-6 flex items-center justify-center font-bold shadow-lg animate-bounce">
+                    {cartCount}
+                  </span>
+                )}
+              </Button>
+              
+              {/* Profile/Auth */}
+              {user ? (
+                <ProfileDropdown 
+                  user={user} 
+                  onLogout={onLogout}
+                  onAdminClick={onAdminRedirect}
+                />
+              ) : (
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  onClick={() => onAuthModalOpen("login")}
+                  className="hover:bg-green-50 hover:text-green-600 rounded-xl transition-all duration-300 hover:scale-105"
+                >
+                  <User className="h-5 w-5 sm:h-6 sm:w-6" />
+                </Button>
+              )}
+            </div>
+          </div>
+        </div>
+      </nav>
+    )
+  }
 
   return (
     <>

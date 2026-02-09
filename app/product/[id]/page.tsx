@@ -273,16 +273,7 @@ export default function ProductPage() {
         }}
         onAdminRedirect={() => router.push('/admin')}
         onCartOpen={() => router.push('/?cart=true')}
-        categories={categories}
-        onCategorySelect={(categoryName, subcategoryName) => {
-          const query = subcategoryName 
-            ? `?category=${encodeURIComponent(categoryName)}&subcategory=${encodeURIComponent(subcategoryName)}`
-            : `?category=${encodeURIComponent(categoryName)}`
-          router.push('/' + query)
-        }}
-        onSearchChange={(searchTerm) => {
-          router.push('/?search=' + encodeURIComponent(searchTerm))
-        }}
+        minimal={true}
       />
 
       {/* Product Details */}
