@@ -112,22 +112,7 @@ export default function ProductPage() {
     }
   }, [])
 
-  useEffect(() => {
-    loadProduct()
-    loadUserData()
-    updateCartCount()
-    loadCategories()
-    loadCartItems()
-  }, [productId, loadCartItems, loadProduct, loadCategories, updateCartCount])
-
-  useEffect(() => {
-    if (product) {
-      loadReviews()
-      loadSimilarProducts()
-    }
-  }, [product, loadReviews, loadSimilarProducts])
-
-  const loadUserData = () => {
+  const loadUserData = useCallback(() => {
     const userData = localStorage.getItem('userData')
     const token = localStorage.getItem('authToken')
     
@@ -145,7 +130,7 @@ export default function ProductPage() {
       // Clear user if no token
       setUser(null)
     }
-  }
+  }, [])
 
   // Listen for storage changes (login/logout in other tabs)
   useEffect(() => {
@@ -166,16 +151,10 @@ export default function ProductPage() {
     loadCartItems()
   }, [loadCartItems])
 
-  // Cart management functions
-  const updateCartQuantity = useCallback((id: string, quantity: number) => {
-    if (quantity <= 0) {
-      removeFromCart(id)
-      return
-    }
+  // Cart management functions - defined together to avoid circular deps
+  const removeFromCart = useCallback((id: string) => {
     setCartItems(prev => {
-      const updated = prev.map(item => 
-        item._id === id ? { ...item, quantity } : item
-      )
+      const updated = prev.filter(item => item._id !== id)
       // Update localStorage
       const flatCart: CartItem[] = []
       updated.forEach(item => {
@@ -190,9 +169,28 @@ export default function ProductPage() {
     })
   }, [])
 
-  const removeFromCart = useCallback((id: string) => {
+  const updateCartQuantity = useCallback((id: string, quantity: number) => {
+    if (quantity <= 0) {
+      // Inline removal logic to avoid stale closure
+      setCartItems(prev => {
+        const updated = prev.filter(item => item._id !== id)
+        const flatCart: CartItem[] = []
+        updated.forEach(item => {
+          for (let i = 0; i < item.quantity; i++) {
+            flatCart.push({ ...item, quantity: 1 })
+          }
+        })
+        localStorage.setItem('cart', JSON.stringify(flatCart))
+        setCartCount(flatCart.length)
+        window.dispatchEvent(new Event('storage'))
+        return updated
+      })
+      return
+    }
     setCartItems(prev => {
-      const updated = prev.filter(item => item._id !== id)
+      const updated = prev.map(item => 
+        item._id === id ? { ...item, quantity } : item
+      )
       // Update localStorage
       const flatCart: CartItem[] = []
       updated.forEach(item => {
@@ -292,6 +290,23 @@ export default function ProductPage() {
       console.error('Error loading similar products:', error)
     }
   }, [product])
+
+  // Main data loading effect
+  useEffect(() => {
+    loadProduct()
+    loadUserData()
+    updateCartCount()
+    loadCategories()
+    loadCartItems()
+  }, [productId]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Load reviews and similar products when product is loaded
+  useEffect(() => {
+    if (product) {
+      loadReviews()
+      loadSimilarProducts()
+    }
+  }, [product?._id]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleAddToCart = useCallback(() => {
     if (!product) return
