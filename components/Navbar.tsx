@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
 import { ProfileDropdown } from "@/components/Modals"
+import { SearchCommand } from "@/components/SearchCommand"
 import { 
   Menu, 
   X, 
@@ -80,6 +81,7 @@ interface Subcategory {
   _id: string
   name: string
   category: string
+  description?: string
 }
 
 interface NavbarProps {
@@ -198,7 +200,7 @@ const NavbarProductDetailModal: React.FC<{
                   <div className="flex items-center space-x-4">
                     {renderStars(product.averageRating || 0)}
                     <span className="text-sm text-gray-600">
-                      {product.averageRating?.toFixed(1)} ({product.totalReviews || 0} avis)
+                      {product.averageRating?.toFixed(1)} {product.totalReviews ? `(${product.totalReviews} avis)` : ''}
                     </span>
                     <Badge className={product.inStock ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800"}>
                       {product.inStock ? "En stock" : "Rupture"}
@@ -394,22 +396,11 @@ const Navbar: React.FC<NavbarProps> = ({
 }) => {
   const router = useRouter()
   const [isMenuOpen, setIsMenuOpen] = useState(false)
-  const [localSearchTerm, setLocalSearchTerm] = useState("")
-  const [searchResults, setSearchResults] = useState<{
-    products: NavbarProduct[]
-    categories: Category[]
-  }>({ products: [], categories: [] })
-  const [popularProducts, setPopularProducts] = useState<NavbarProduct[]>([])
-  const [popularCategories, setPopularCategories] = useState<Category[]>([])
-  const [isSearching, setIsSearching] = useState(false)
-  const [showSearchResults, setShowSearchResults] = useState(false)
-  const [isInitialLoad, setIsInitialLoad] = useState(true)
   const [scrolled, setScrolled] = useState(false)
   const [hoveredCategory, setHoveredCategory] = useState<string | null>(null)
   const [isMobileCategoriesOpen, setIsMobileCategoriesOpen] = useState(false)
   const [selectedProduct, setSelectedProduct] = useState<FullProduct | null>(null)
   const [isProductModalOpen, setIsProductModalOpen] = useState(false)
-  const searchRef = useRef<HTMLDivElement>(null)
   const mobileMenuRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
@@ -421,14 +412,7 @@ const Navbar: React.FC<NavbarProps> = ({
   }, [])
 
   useEffect(() => {
-    loadPopularItems()
-  }, [])
-
-  useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (searchRef.current && !searchRef.current.contains(event.target as Node)) {
-        setShowSearchResults(false)
-      }
       if (mobileMenuRef.current && !mobileMenuRef.current.contains(event.target as Node) && isMenuOpen) {
         setIsMenuOpen(false)
       }
@@ -438,136 +422,13 @@ const Navbar: React.FC<NavbarProps> = ({
     return () => document.removeEventListener('mousedown', handleClickOutside)
   }, [isMenuOpen])
 
-  useEffect(() => {
-    const delayDebounceFn = setTimeout(() => {
-      if (localSearchTerm.trim().length >= 2) {
-        performSearch(localSearchTerm)
-        setIsInitialLoad(false)
-      } else if (localSearchTerm.trim().length === 0) {
-        setSearchResults({ products: [], categories: [] })
-        setIsInitialLoad(true)
-      }
-    }, 300)
-
-    return () => clearTimeout(delayDebounceFn)
-  }, [localSearchTerm])
-
-  const loadPopularItems = async () => {
-    try {
-      const [productsRes, categoriesRes] = await Promise.all([
-        fetch('https://biopharma-backend.onrender.com/api/products?limit=8&sortBy=rating&sortOrder=desc'),
-        fetch('https://biopharma-backend.onrender.com/api/categories')
-      ])
-
-      if (productsRes.ok && categoriesRes.ok) {
-        const productsData = await productsRes.json()
-        const categoriesData = await categoriesRes.json()
-
-        const products = (productsData.products || []).slice(0, 8).map((p: any) => ({
-          _id: p._id,
-          name: p.name,
-          price: p.price,
-          image: p.image,
-          categoryName: p.category?.name || 'Non catégorisé',
-          subcategoryName: p.subcategory?.name,
-          rating: p.averageRating || 0,
-          badge: p.badge
-        }))
-
-        const categories = (Array.isArray(categoriesData) ? categoriesData : []).slice(0, 8)
-
-        setPopularProducts(products)
-        setPopularCategories(categories)
-      }
-    } catch (error) {
-      console.error('Error loading popular items:', error)
-    }
-  }
-
-  const performSearch = async (query: string) => {
-    setIsSearching(true)
-    try {
-      const [productsRes, categoriesRes] = await Promise.all([
-        fetch(`https://biopharma-backend.onrender.com/api/products?search=${encodeURIComponent(query)}&limit=8`),
-        fetch('https://biopharma-backend.onrender.com/api/categories')
-      ])
-
-      if (!productsRes.ok || !categoriesRes.ok) {
-        throw new Error('Search request failed')
-      }
-
-      const productsData = await productsRes.json()
-      const categoriesData = await categoriesRes.json()
-
-      const productsArray = productsData.products || []
-      
-      const products = productsArray
-        .slice(0, 8)
-        .map((p: any) => ({
-          _id: p._id,
-          name: p.name,
-          price: p.price,
-          image: p.image,
-          categoryName: p.category?.name || 'Non catégorisé',
-          subcategoryName: p.subcategory?.name,
-          rating: p.averageRating || 0,
-          badge: p.badge
-        }))
-
-      const categories = (Array.isArray(categoriesData) ? categoriesData : [])
-        .filter((c: any) => c.name.toLowerCase().includes(query.toLowerCase()))
-        .slice(0, 8)
-
-      setSearchResults({ products, categories })
-      setShowSearchResults(true)
-    } catch (error) {
-      console.error('Search error:', error)
-      setSearchResults({ products: [], categories: [] })
-    } finally {
-      setIsSearching(false)
-    }
-  }
-
-  const handleProductClick = async (product: NavbarProduct) => {
-    console.log('Product clicked from navbar:', product)
-    console.log('Navigating to:', `/product/${product._id}`)
-    
-    // Close search results first
-    setShowSearchResults(false)
-    setLocalSearchTerm("")
-    
-    // Navigate to product page
-    try {
-      await router.push(`/product/${product._id}`)
-      console.log('Navigation complete')
-    } catch (error) {
-      console.error('Navigation error:', error)
-    }
-    
-    // Also notify parent if needed
-    if (onProductClick) {
-      onProductClick(product)
-    }
-  }
-
   const handleAddToCart = (product: FullProduct) => {
     if (onAddToCart) {
       onAddToCart(product)
     }
   }
 
-  const handleSearchSubmit = (e: React.FormEvent) => {
-    e.preventDefault()
-    if (onSearchChange && localSearchTerm.trim()) {
-      onSearchChange(localSearchTerm)
-      setShowSearchResults(false)
-      setIsMenuOpen(false)
-    }
-  }
-
   const handleCategoryClick = (categoryName: string, subcategoryName?: string) => {
-    setShowSearchResults(false)
-    setLocalSearchTerm("")
     setHoveredCategory(null)
     setIsMenuOpen(false)
     setIsMobileCategoriesOpen(false)
@@ -584,9 +445,6 @@ const Navbar: React.FC<NavbarProps> = ({
     const numPrice = parseFloat(price)
     return isNaN(numPrice) ? price : numPrice.toFixed(2)
   }
-
-  const displayProducts = isInitialLoad ? popularProducts : searchResults.products
-  const displayCategories = isInitialLoad ? popularCategories : searchResults.categories
 
   // Minimal navbar for product pages
   if (minimal) {
@@ -739,160 +597,25 @@ const Navbar: React.FC<NavbarProps> = ({
               ))}
             </div>
 
-            {/* Search Bar - Hidden on Mobile */}
+            {/* Professional Search Bar - Hidden on Mobile */}
             <div className="hidden md:block flex-1 max-w-2xl mx-4 lg:mx-8">
-              <div className="relative" ref={searchRef}>
-                <form onSubmit={handleSearchSubmit}>
-                  <div className="relative">
-                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 sm:h-5 sm:w-5 text-gray-400 transition-colors duration-200 peer-focus:text-green-600" />
-                    <Input
-                      type="text"
-                      placeholder="Rechercher produits..."
-                      value={localSearchTerm}
-                      onChange={(e) => setLocalSearchTerm(e.target.value)}
-                      onFocus={() => setShowSearchResults(true)}
-                      className="peer pl-10 pr-4 h-10 sm:h-12 text-sm sm:text-base border-2 border-green-100 focus:border-green-400 focus:ring-2 sm:focus:ring-4 focus:ring-green-100 rounded-xl bg-gray-50 focus:bg-white transition-all duration-300 shadow-sm hover:shadow-md focus:shadow-lg"
-                    />
-                    {isSearching && (
-                      <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
-                        <div className="animate-spin rounded-full h-4 w-4 sm:h-5 sm:w-5 border-2 border-green-600 border-t-transparent"></div>
-                      </div>
-                    )}
-                  </div>
-                </form>
-
-                {/* Search Results Dropdown */}
-                {showSearchResults && (
-                  <div 
-                    className="fixed left-2 right-2 sm:left-4 sm:right-4 lg:left-1/2 lg:right-auto lg:-translate-x-1/2 bg-white rounded-2xl shadow-2xl border border-green-100 overflow-hidden z-[100] animate-in fade-in slide-in-from-top-2 duration-300"
-                    style={{ 
-                      width: 'calc(100% - 1rem)',
-                      maxWidth: '1280px',
-                      maxHeight: '80vh',
-                      top: 'calc(100% + 8px)',
-                    }}
-                  >
-                    <div className="overflow-y-auto max-h-[80vh]">
-                      <div className="bg-gradient-to-r from-green-600 via-emerald-600 to-green-700 p-4 sm:p-6 text-white">
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center space-x-2 sm:space-x-3">
-                            {isInitialLoad ? (
-                              <div>
-                                <h3 className="text-base sm:text-lg font-bold">Découvrez nos produits</h3>
-                                <p className="text-xs sm:text-sm text-green-50 mt-0.5">Explorez notre sélection populaire</p>
-                              </div>
-                            ) : (
-                              <>
-                                <Search className="w-5 h-5 sm:w-6 sm:h-6" />
-                                <div>
-                                  <h3 className="text-base sm:text-lg font-bold">Résultats de recherche</h3>
-                                  <p className="text-xs sm:text-sm text-green-50 mt-0.5">
-                                    {displayProducts.length + displayCategories.length} résultats pour "{localSearchTerm}"
-                                  </p>
-                                </div>
-                              </>
-                            )}
-                          </div>
-                          <button
-                            onClick={() => setShowSearchResults(false)}
-                            className="p-1 sm:p-2 hover:bg-white/20 rounded-lg transition-colors"
-                          >
-                            <X className="w-4 h-4 sm:w-5 sm:h-5" />
-                          </button>
-                        </div>
-                      </div>
-
-                      <div className="p-4 sm:p-6">
-                        {displayProducts.length > 0 && (
-                          <div>
-                            <div className="flex items-center space-x-2 mb-3 sm:mb-4">
-                              {isInitialLoad ? (
-                                <>
-                                  <TrendingUp className="w-4 h-4 sm:w-5 sm:h-5 text-green-600" />
-                                  <h4 className="text-xs sm:text-sm font-bold text-gray-900 uppercase tracking-wide">Produits Populaires</h4>
-                                </>
-                              ) : (
-                                <>
-                                  <Clock className="w-4 h-4 sm:w-5 sm:h-5 text-green-600" />
-                                  <h4 className="text-xs sm:text-sm font-bold text-gray-900 uppercase tracking-wide">Produits Trouvés</h4>
-                                </>
-                              )}
-                            </div>
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                              {displayProducts.map((product) => (
-                                <motion.div
-                                  key={product._id}
-                                  onClick={() => {
-                                    window.location.href = `/product/${product._id}`
-                                  }}
-                                  whileHover={{ scale: 1.02 }}
-                                  whileTap={{ scale: 0.98 }}
-                                  className="flex items-center space-x-3 sm:space-x-4 p-3 sm:p-4 hover:bg-gradient-to-r hover:from-green-50 hover:to-emerald-50 rounded-xl transition-all duration-200 group border border-gray-100 hover:border-green-200 hover:shadow-md cursor-pointer"
-                                >
-                                  <div className="relative w-16 h-16 sm:w-20 sm:h-20 bg-gradient-to-br from-gray-100 to-gray-200 rounded-xl overflow-hidden flex-shrink-0 border-2 border-gray-200 group-hover:border-green-300 transition-colors">
-                                    <img 
-                                      src={product.image || "/placeholder-product.jpg"} 
-                                      alt={product.name}
-                                      className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
-                                      onError={(e) => {
-                                        e.currentTarget.src = "/placeholder-product.jpg"
-                                      }}
-                                    />
-                                  </div>
-                                  <div className="flex-1 min-w-0">
-                                    <p className="text-xs sm:text-sm font-semibold text-gray-900 group-hover:text-green-600 line-clamp-2 mb-2 transition-colors">
-                                      {product.name}
-                                    </p>
-                                    <div className="flex items-center space-x-2 mb-2">
-                                      <Badge variant="secondary" className="text-xs bg-green-100 text-green-700 font-medium">
-                                        {product.categoryName}
-                                      </Badge>
-                                      {product.rating && product.rating > 0 && (
-                                        <div className="flex items-center space-x-1">
-                                          <Star className="w-3 h-3 fill-yellow-400 text-yellow-400" />
-                                          <span className="text-xs font-medium text-gray-600">{product.rating.toFixed(1)}</span>
-                                        </div>
-                                      )}
-                                    </div>
-                                    <div className="flex items-center justify-between">
-                                      <span className="text-sm sm:text-base font-bold text-green-600">
-                                        {formatPrice(product.price)} TND
-                                      </span>
-                                      <ArrowRight className="w-4 h-4 text-gray-400 group-hover:text-green-600 transform group-hover:translate-x-1 transition-all" />
-                                    </div>
-                                  </div>
-                                </motion.div>
-                              ))}
-                            </div>
-                          </div>
-                        )}
-                      </div>
-
-                      {!isInitialLoad && localSearchTerm.length >= 2 && displayProducts.length === 0 && !isSearching && (
-                        <div className="p-6 sm:p-12 text-center">
-                          <div className="w-16 h-16 sm:w-24 sm:h-24 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4 sm:mb-6">
-                            <Search className="w-8 h-8 sm:w-12 sm:h-12 text-gray-400" />
-                          </div>
-                          <h3 className="text-lg sm:text-xl font-bold text-gray-900 mb-2">Aucun résultat trouvé</h3>
-                          <p className="text-gray-500 text-sm sm:text-base mb-4 sm:mb-6">Essayez d'autres mots-clés ou parcourez nos catégories populaires</p>
-                          <Button
-                            onClick={() => setLocalSearchTerm("")}
-                            className="bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white rounded-xl shadow-lg hover:shadow-xl transition-all duration-200 text-sm sm:text-base"
-                          >
-                            Réinitialiser la recherche
-                          </Button>
-                        </div>
-                      )}
-
-                      <div className="bg-gradient-to-r from-gray-50 to-green-50 px-4 sm:px-6 py-3 sm:py-4 border-t border-gray-200">
-                        <p className="text-xs text-gray-600 text-center font-medium">
-                          Tapez au moins 2 caractères pour lancer une recherche
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                )}
-              </div>
+              <SearchCommand
+                onProductClick={(product) => {
+                  if (onProductClick) {
+                    onProductClick(product)
+                  }
+                }}
+                onCategorySelect={(categoryName) => {
+                  if (onCategorySelect) {
+                    onCategorySelect(categoryName)
+                  }
+                }}
+                onSearchSubmit={(term) => {
+                  if (onSearchChange) {
+                    onSearchChange(term)
+                  }
+                }}
+              />
             </div>
 
             {/* Desktop User Actions */}
@@ -981,27 +704,25 @@ const Navbar: React.FC<NavbarProps> = ({
 
           {/* Mobile Search Bar - Always visible on mobile */}
           <div className="md:hidden mb-3">
-            <div className="relative" ref={searchRef}>
-              <form onSubmit={handleSearchSubmit}>
-                <div className="relative">
-                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400 transition-colors duration-200 peer-focus:text-green-600" />
-                  <Input
-                    id="mobile-search-input"
-                    type="text"
-                    placeholder="Rechercher produits..."
-                    value={localSearchTerm}
-                    onChange={(e) => setLocalSearchTerm(e.target.value)}
-                    onFocus={() => setShowSearchResults(true)}
-                    className="peer pl-10 pr-4 h-10 text-sm border-2 border-green-100 focus:border-green-400 focus:ring-2 focus:ring-green-100 rounded-xl bg-gray-50 focus:bg-white transition-all duration-300 shadow-sm hover:shadow-md focus:shadow-lg"
-                  />
-                  {isSearching && (
-                    <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
-                      <div className="animate-spin rounded-full h-4 w-4 border-2 border-green-600 border-t-transparent"></div>
-                    </div>
-                  )}
-                </div>
-              </form>
-            </div>
+            <SearchCommand
+              onProductClick={(product) => {
+                if (onProductClick) {
+                  onProductClick(product)
+                }
+              }}
+              onCategorySelect={(categoryName) => {
+                if (onCategorySelect) {
+                  onCategorySelect(categoryName)
+                }
+              }}
+              onSearchSubmit={(term) => {
+                if (onSearchChange) {
+                  onSearchChange(term)
+                }
+              }}
+              isMobile={true}
+              className="w-full"
+            />
           </div>
 
           {/* Mobile Menu */}
@@ -1346,79 +1067,6 @@ const Navbar: React.FC<NavbarProps> = ({
 
         <div className="absolute bottom-0 left-0 right-0 h-1 bg-gradient-to-r from-transparent via-green-400 to-transparent opacity-50"></div>
       </div>
-
-      {/* Mobile Search Results Overlay */}
-      {showSearchResults && (displayProducts.length > 0 || displayCategories.length > 0) && (
-        <div className="md:hidden fixed inset-0 bg-white z-[100] top-0 pt-20 animate-in slide-in-from-top duration-300">
-          <div className="h-full overflow-y-auto">
-            <div className="sticky top-0 bg-white border-b border-green-100 p-4 flex items-center justify-between">
-              <div className="flex items-center space-x-2">
-                <Search className="w-5 h-5 text-green-600" />
-                <div>
-                  <h3 className="font-bold text-gray-900">
-                    {isInitialLoad ? 'Produits populaires' : `Résultats pour "${localSearchTerm}"`}
-                  </h3>
-                  <p className="text-sm text-gray-500">
-                    {displayProducts.length + displayCategories.length} résultats
-                  </p>
-                </div>
-              </div>
-              <button
-                onClick={() => setShowSearchResults(false)}
-                className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-
-            <div className="p-4">
-              {displayProducts.length > 0 && (
-                <div>
-                  <h4 className="text-sm font-bold text-gray-900 mb-3 flex items-center space-x-2">
-                    <TrendingUp className="w-4 h-4 text-green-600" />
-                    <span>Produits</span>
-                  </h4>
-                  <div className="space-y-3">
-                    {displayProducts.map((product) => (
-                      <motion.div
-                        key={product._id}
-                        onClick={() => {
-                          window.location.href = `/product/${product._id}`
-                        }}
-                        whileHover={{ scale: 1.02 }}
-                        whileTap={{ scale: 0.98 }}
-                        className="w-full flex items-center space-x-3 p-3 bg-gray-50 hover:bg-green-50 rounded-xl transition-colors border border-gray-100 cursor-pointer"
-                      >
-                        <div className="relative w-16 h-16 bg-gradient-to-br from-gray-100 to-gray-200 rounded-lg overflow-hidden flex-shrink-0">
-                          <img 
-                            src={product.image || "/placeholder-product.jpg"} 
-                            alt={product.name}
-                            className="w-full h-full object-cover"
-                          />
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <p className="font-medium text-gray-900 line-clamp-2 text-sm mb-1">{product.name}</p>
-                          <div className="flex items-center justify-between">
-                            <span className="font-bold text-green-600">
-                              {formatPrice(product.price)} TND
-                            </span>
-                            {product.rating && product.rating > 0 && (
-                              <div className="flex items-center space-x-1">
-                                <Star className="w-3 h-3 fill-yellow-400 text-yellow-400" />
-                                <span className="text-xs font-medium text-gray-600">{product.rating.toFixed(1)}</span>
-                              </div>
-                            )}
-                          </div>
-                        </div>
-                      </motion.div>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* Product Detail Modal for Navbar */}
       <NavbarProductDetailModal 

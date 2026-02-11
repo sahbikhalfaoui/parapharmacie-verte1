@@ -1,5 +1,5 @@
 "use client"
-import React, { useState, useEffect } from "react"
+import React, { useState, useEffect, useCallback, useMemo } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -127,16 +127,21 @@ export default function VitaPharmWebsite() {
 
   // Load cart and favorites from localStorage on component mount
   useEffect(() => {
-    // Set loading timer
+    // Set loading timer - reduced for faster perceived performance
     const loadingTimer = setTimeout(() => {
       setShowLoading(false)
-    }, 5000)
+    }, 1500)
 
     const token = localStorage.getItem('authToken')
     const userData = localStorage.getItem('userData')
     
     if (token && userData) {
-      setUser(JSON.parse(userData))
+      try {
+        setUser(JSON.parse(userData))
+      } catch (e) {
+        console.error('Error parsing user data:', e)
+        localStorage.removeItem('userData')
+      }
     }
     
     // Load cart from localStorage

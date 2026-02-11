@@ -1,5 +1,5 @@
 "use client"
-import React, { useState, useEffect } from "react"
+import React, { useState, useEffect, useCallback, useMemo } from "react"
 import { useParams, useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -7,6 +7,7 @@ import { Card, CardContent } from "@/components/ui/card"
 import { Textarea } from "@/components/ui/textarea"
 import { motion } from "framer-motion"
 import Navbar from "@/components/Navbar"
+import { CartSheet } from "@/components/Modals"
 import { 
   Star, 
   ShoppingCart, 
@@ -57,6 +58,15 @@ interface Category {
   subcategories?: Array<{ _id: string; name: string; category: string }>
 }
 
+interface CartItem {
+  _id: string
+  name: string
+  price: number
+  image?: string
+  categoryName?: string
+  quantity: number
+}
+
 export default function ProductPage() {
   const params = useParams()
   const router = useRouter()
@@ -75,59 +85,151 @@ export default function ProductPage() {
   const [categories, setCategories] = useState<Category[]>([])
   const [showAuthModal, setShowAuthModal] = useState(false)
   const [newReviewRating, setNewReviewRating] = useState(0)
+  const [newReviewTitle, setNewReviewTitle] = useState("")
   const [newReviewComment, setNewReviewComment] = useState("")
   const [isSubmittingReview, setIsSubmittingReview] = useState(false)
   const [hoverRating, setHoverRating] = useState(0)
+  const [isCartOpen, setIsCartOpen] = useState(false)
+  const [cartItems, setCartItems] = useState<CartItem[]>([])
+
+  // Load cart items from localStorage
+  const loadCartItems = useCallback(() => {
+    try {
+      const cart = JSON.parse(localStorage.getItem('cart') || '[]')
+      // Group items by ID and sum quantities
+      const grouped = cart.reduce((acc: Record<string, CartItem>, item: CartItem) => {
+        if (acc[item._id]) {
+          acc[item._id].quantity += item.quantity || 1
+        } else {
+          acc[item._id] = { ...item, quantity: item.quantity || 1 }
+        }
+        return acc
+      }, {})
+      setCartItems(Object.values(grouped))
+    } catch (error) {
+      console.error('Error loading cart:', error)
+      setCartItems([])
+    }
+  }, [])
 
   useEffect(() => {
     loadProduct()
     loadUserData()
     updateCartCount()
     loadCategories()
-  }, [productId])
+    loadCartItems()
+  }, [productId, loadCartItems, loadProduct, loadCategories, updateCartCount])
 
   useEffect(() => {
     if (product) {
       loadReviews()
       loadSimilarProducts()
     }
-  }, [product])
+  }, [product, loadReviews, loadSimilarProducts])
 
   const loadUserData = () => {
     const userData = localStorage.getItem('userData')
-    if (userData) {
+    const token = localStorage.getItem('authToken')
+    
+    // Only set user if both userData and token exist
+    if (userData && token) {
       try {
         setUser(JSON.parse(userData))
       } catch (error) {
         console.error('Error parsing user data:', error)
+        // Clear invalid data
+        localStorage.removeItem('userData')
+        setUser(null)
       }
+    } else {
+      // Clear user if no token
+      setUser(null)
     }
   }
 
-  const updateCartCount = () => {
+  // Listen for storage changes (login/logout in other tabs)
+  useEffect(() => {
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === 'authToken' || e.key === 'userData') {
+        loadUserData()
+        updateCartCount()
+      }
+    }
+    
+    window.addEventListener('storage', handleStorageChange)
+    return () => window.removeEventListener('storage', handleStorageChange)
+  }, [])
+
+  const updateCartCount = useCallback(() => {
     const cart = JSON.parse(localStorage.getItem('cart') || '[]')
     setCartCount(cart.length)
-  }
+    loadCartItems()
+  }, [loadCartItems])
 
-  const loadCategories = async () => {
+  // Cart management functions
+  const updateCartQuantity = useCallback((id: string, quantity: number) => {
+    if (quantity <= 0) {
+      removeFromCart(id)
+      return
+    }
+    setCartItems(prev => {
+      const updated = prev.map(item => 
+        item._id === id ? { ...item, quantity } : item
+      )
+      // Update localStorage
+      const flatCart: CartItem[] = []
+      updated.forEach(item => {
+        for (let i = 0; i < item.quantity; i++) {
+          flatCart.push({ ...item, quantity: 1 })
+        }
+      })
+      localStorage.setItem('cart', JSON.stringify(flatCart))
+      setCartCount(flatCart.length)
+      window.dispatchEvent(new Event('storage'))
+      return updated
+    })
+  }, [])
+
+  const removeFromCart = useCallback((id: string) => {
+    setCartItems(prev => {
+      const updated = prev.filter(item => item._id !== id)
+      // Update localStorage
+      const flatCart: CartItem[] = []
+      updated.forEach(item => {
+        for (let i = 0; i < item.quantity; i++) {
+          flatCart.push({ ...item, quantity: 1 })
+        }
+      })
+      localStorage.setItem('cart', JSON.stringify(flatCart))
+      setCartCount(flatCart.length)
+      window.dispatchEvent(new Event('storage'))
+      return updated
+    })
+  }, [])
+
+  const clearCart = useCallback(() => {
+    setCartItems([])
+    localStorage.setItem('cart', JSON.stringify([]))
+    setCartCount(0)
+    window.dispatchEvent(new Event('storage'))
+  }, [])
+
+  const loadCategories = useCallback(async () => {
     try {
       const response = await fetch('https://biopharma-backend.onrender.com/api/categories')
       const data = await response.json()
-      console.log('Categories loaded:', data)
       // Handle both response formats
       const categoriesData = data.categories || data
       setCategories(Array.isArray(categoriesData) ? categoriesData : [])
-      console.log('Categories set:', Array.isArray(categoriesData) ? categoriesData.length : 0)
     } catch (error) {
       console.error('Error loading categories:', error)
     }
-  }
+  }, [])
 
-  const loadProduct = async () => {
+  const loadProduct = useCallback(async () => {
     try {
       const response = await fetch(`https://biopharma-backend.onrender.com/api/products/${productId}`)
       const data = await response.json()
-      console.log('Product data:', data)
       // Handle both response formats: { product: {...} } or direct product object
       const productData = data.product || data
       
@@ -150,9 +252,9 @@ export default function ProductPage() {
     } finally {
       setIsLoading(false)
     }
-  }
+  }, [productId])
 
-  const loadReviews = async () => {
+  const loadReviews = useCallback(async () => {
     setReviewsLoading(true)
     try {
       const response = await fetch(`https://biopharma-backend.onrender.com/api/products/${productId}/reviews`)
@@ -163,9 +265,9 @@ export default function ProductPage() {
     } finally {
       setReviewsLoading(false)
     }
-  }
+  }, [productId])
 
-  const loadSimilarProducts = async () => {
+  const loadSimilarProducts = useCallback(async () => {
     if (!product) return
     
     try {
@@ -189,9 +291,9 @@ export default function ProductPage() {
     } catch (error) {
       console.error('Error loading similar products:', error)
     }
-  }
+  }, [product])
 
-  const handleAddToCart = () => {
+  const handleAddToCart = useCallback(() => {
     if (!product) return
     
     setIsAddingToCart(true)
@@ -212,14 +314,16 @@ export default function ProductPage() {
     // Trigger storage event for cart update
     window.dispatchEvent(new Event('storage'))
     updateCartCount()
+    loadCartItems()
     
     setTimeout(() => {
       setIsAddingToCart(false)
-      alert(`${product.name} ajouté au panier`)
-    }, 500)
-  }
+      // Open cart instead of showing alert
+      setIsCartOpen(true)
+    }, 300)
+  }, [product, quantity, updateCartCount, loadCartItems])
 
-  const renderStars = (rating: number = 0) => {
+  const renderStars = useCallback((rating: number = 0) => {
     return (
       <div className="flex items-center space-x-0.5">
         {[...Array(5)].map((_, i) => (
@@ -230,15 +334,15 @@ export default function ProductPage() {
         ))}
       </div>
     )
-  }
+  }, [])
 
-  const formatDate = (dateString: string) => {
+  const formatDate = useCallback((dateString: string) => {
     return new Date(dateString).toLocaleDateString('fr-FR', {
       year: 'numeric',
       month: 'long',
       day: 'numeric'
     })
-  }
+  }, [])
 
   const handleSubmitReview = async () => {
     if (!user) {
@@ -252,6 +356,11 @@ export default function ProductPage() {
       return
     }
 
+    if (!newReviewTitle.trim()) {
+      alert('Veuillez ajouter un titre pour votre avis')
+      return
+    }
+
     if (!newReviewComment.trim()) {
       alert('Veuillez écrire un commentaire')
       return
@@ -260,33 +369,61 @@ export default function ProductPage() {
     setIsSubmittingReview(true)
     try {
       const token = localStorage.getItem('authToken')
+      
+      if (!token) {
+        alert('Session expirée. Veuillez vous reconnecter.')
+        router.push('/?auth=login')
+        return
+      }
+
+      const reviewData = {
+        rating: newReviewRating,
+        title: newReviewTitle.trim(),
+        comment: newReviewComment.trim()
+      }
+      
+      console.log('Submitting review:', reviewData)
+      console.log('Token (first 20 chars):', token.substring(0, 20) + '...')
+
       const response = await fetch(`https://biopharma-backend.onrender.com/api/products/${productId}/reviews`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`
         },
-        body: JSON.stringify({
-          rating: newReviewRating,
-          comment: newReviewComment
-        })
+        body: JSON.stringify(reviewData)
       })
+
+      const data = await response.json()
 
       if (response.ok) {
         // Reset form
         setNewReviewRating(0)
+        setNewReviewTitle("")
         setNewReviewComment("")
         // Reload reviews and product to update average rating
         loadReviews()
         loadProduct()
         alert('Avis ajouté avec succès!')
       } else {
-        const data = await response.json()
-        alert(data.message || 'Erreur lors de l\'ajout de l\'avis')
+        console.error('Review submission error:', response.status, data)
+        console.error('Full error data:', JSON.stringify(data, null, 2))
+        
+        const errorMessage = data.error || data.message || 'Erreur inconnue'
+        
+        if (response.status === 401) {
+          alert('Session expirée. Veuillez vous reconnecter.')
+          localStorage.removeItem('authToken')
+          router.push('/?auth=login')
+        } else if (response.status === 400) {
+          alert(`Erreur: ${errorMessage}`)
+        } else {
+          alert(`Erreur serveur (${response.status}): ${errorMessage}`)
+        }
       }
     } catch (error) {
       console.error('Error submitting review:', error)
-      alert('Erreur lors de l\'ajout de l\'avis')
+      alert('Erreur de connexion. Veuillez vérifier votre connexion internet et réessayer.')
     } finally {
       setIsSubmittingReview(false)
     }
@@ -330,7 +467,7 @@ export default function ProductPage() {
           router.push('/')
         }}
         onAdminRedirect={() => router.push('/admin')}
-        onCartOpen={() => router.push('/?cart=true')}
+        onCartOpen={() => setIsCartOpen(true)}
         minimal={true}
       />
 
@@ -350,6 +487,7 @@ export default function ProductPage() {
                   src={product.image || "/placeholder.jpg"} 
                   alt={product.name}
                   className="w-full h-full object-cover"
+                  loading="eager"
                   onError={(e) => {
                     e.currentTarget.src = "/placeholder.jpg"
                   }}
@@ -377,7 +515,7 @@ export default function ProductPage() {
                 <div className="flex items-center space-x-4 mb-6">
                   {renderStars(product.averageRating || 0)}
                   <span className="text-sm text-gray-600">
-                    {product.averageRating?.toFixed(1)} ({product.totalReviews || 0} avis)
+                    {product.averageRating?.toFixed(1)} {product.totalReviews ? `(${product.totalReviews} avis)` : ''}
                   </span>
                   <Badge className={product.inStock ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800"}>
                     {product.inStock ? "En stock" : "Rupture"}
@@ -494,7 +632,7 @@ export default function ProductPage() {
                       <div className="flex items-center space-x-4 pb-4 border-b">
                         {renderStars(product.averageRating || 0)}
                         <span className="font-semibold text-xl">{product.averageRating?.toFixed(1)}/5</span>
-                        <span className="text-gray-600">({product.totalReviews || 0} avis)</span>
+                        <span className="text-gray-600">{product.totalReviews ? `(${product.totalReviews} avis)` : '(Aucun avis)'}</span>
                       </div>
 
                       {reviewsLoading ? (
@@ -564,6 +702,19 @@ export default function ProductPage() {
                           </div>
                         </div>
 
+                        {/* Title Input */}
+                        <div className="mb-4">
+                          <label className="block text-sm font-medium text-gray-700 mb-2">Titre de votre avis</label>
+                          <input
+                            type="text"
+                            value={newReviewTitle}
+                            onChange={(e) => setNewReviewTitle(e.target.value)}
+                            placeholder="Résumez votre avis en quelques mots..."
+                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                            maxLength={100}
+                          />
+                        </div>
+
                         {/* Comment Input */}
                         <div className="mb-4">
                           <label className="block text-sm font-medium text-gray-700 mb-2">Votre commentaire</label>
@@ -582,7 +733,7 @@ export default function ProductPage() {
                         >
                           <Button
                             onClick={handleSubmitReview}
-                            disabled={isSubmittingReview || newReviewRating === 0 || !newReviewComment.trim()}
+                            disabled={isSubmittingReview || newReviewRating === 0 || !newReviewTitle.trim() || !newReviewComment.trim()}
                             className="w-full sm:w-auto bg-green-600 hover:bg-green-700 text-white"
                           >
                             {isSubmittingReview ? (
@@ -640,6 +791,7 @@ export default function ProductPage() {
                       src={similarProduct.image || "/placeholder.jpg"} 
                       alt={similarProduct.name}
                       className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                      loading="lazy"
                       onError={(e) => {
                         e.currentTarget.src = "/placeholder.jpg"
                       }}
@@ -745,14 +897,7 @@ export default function ProductPage() {
           </a>
 
           <button
-            onClick={() => {
-              const currentCart = JSON.parse(localStorage.getItem('cart') || '[]')
-              console.log('Cart:', currentCart)
-              window.location.href = '/'
-              setTimeout(() => {
-                window.dispatchEvent(new CustomEvent('openCart'))
-              }, 500)
-            }}
+            onClick={() => setIsCartOpen(true)}
             className="flex flex-col items-center justify-center py-2 px-1 hover:bg-green-50 transition-colors relative"
           >
             <div className="w-6 h-6 mb-1 relative">
@@ -796,6 +941,16 @@ export default function ProductPage() {
 
       {/* Spacer for mobile bottom nav */}
       <div className="lg:hidden h-16"></div>
+
+      {/* Cart Sheet */}
+      <CartSheet
+        isOpen={isCartOpen}
+        onClose={() => setIsCartOpen(false)}
+        cartItems={cartItems}
+        updateQuantity={updateCartQuantity}
+        removeFromCart={removeFromCart}
+        clearCart={clearCart}
+      />
     </div>
   )
 }

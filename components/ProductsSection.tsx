@@ -391,7 +391,7 @@ const ProductDetailModal: React.FC<{
                   <div className="flex items-center space-x-4">
                     {renderStars(product.averageRating || 0)}
                     <span className="text-sm text-gray-600">
-                      {product.averageRating?.toFixed(1)} ({product.totalReviews || 0} avis)
+                      {product.averageRating?.toFixed(1)} {product.totalReviews ? `(${product.totalReviews} avis)` : ''}
                     </span>
                     <Badge className={product.inStock ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800"}>
                       {product.inStock ? "En stock" : "Rupture"}
@@ -509,7 +509,7 @@ const ProductDetailModal: React.FC<{
                           <div className="flex items-center space-x-2">
                             {renderStars(product.averageRating || 0)}
                             <span className="font-semibold">{product.averageRating?.toFixed(1)}/5</span>
-                            <span className="text-gray-600">({product.totalReviews || 0} avis)</span>
+                            <span className="text-gray-600">{product.totalReviews ? `(${product.totalReviews} avis)` : '(Aucun avis)'}</span>
                           </div>
                           <motion.div
                             whileHover={{ scale: 1.05 }}
@@ -741,9 +741,9 @@ const ProductsSection: React.FC<ProductsSectionProps> = ({
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5, delay: 0.2 }}
-              className="flex items-center justify-center gap-3 mb-6 flex-wrap"
+              className="flex items-center justify-center gap-3 mb-6 flex-wrap relative z-20"
             >
-              {categories.map((category) => {
+              {categories.map((category, categoryIndex) => {
                 const categorySubcategories = getSubcategoriesForCategory(category)
                 const hasSubcategories = categorySubcategories.length > 0
                 
@@ -751,6 +751,7 @@ const ProductsSection: React.FC<ProductsSectionProps> = ({
                   <motion.div 
                     key={category} 
                     className="relative"
+                    style={{ zIndex: hoveredCategory === category ? 100 : 10 - categoryIndex }}
                     onMouseEnter={() => setHoveredCategory(category)}
                     onMouseLeave={() => setHoveredCategory(null)}
                     whileHover={{ scale: 1.05 }}
@@ -777,13 +778,14 @@ const ProductsSection: React.FC<ProductsSectionProps> = ({
                         initial={{ opacity: 0, y: 10 }}
                         animate={{ opacity: 1, y: 0 }}
                         exit={{ opacity: 0, y: 10 }}
-                        className="absolute top-full left-1/2 transform -translate-x-1/2 pt-2 z-50"
+                        className="absolute top-full left-1/2 transform -translate-x-1/2 pt-2"
+                        style={{ zIndex: 1000 }}
                         onMouseEnter={() => setHoveredCategory(category)}
                         onMouseLeave={() => setHoveredCategory(null)}
                       >
-                        <div className="absolute top-1 left-1/2 transform -translate-x-1/2 w-4 h-4 bg-white border-t border-l border-green-100 rotate-45" />
+                        <div className="absolute top-1 left-1/2 transform -translate-x-1/2 w-4 h-4 bg-white border-t border-l border-green-100 rotate-45" style={{ zIndex: 1001 }} />
                         
-                        <div className="relative bg-white rounded-xl shadow-2xl border-2 border-green-200 overflow-hidden min-w-[220px] mt-2">
+                        <div className="relative bg-white rounded-xl shadow-2xl border-2 border-green-200 overflow-hidden min-w-[220px] mt-2" style={{ zIndex: 1002 }}>
                           <div className="p-3">
                             <div className="text-xs font-bold text-green-600 px-3 py-2 border-b border-gray-100 bg-green-50">
                               Sous-catégories

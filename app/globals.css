@@ -429,3 +429,74 @@
   background: linear-gradient(90deg, #2a2a2a 25%, #3a3a3a 50%, #2a2a2a 75%);
   background-size: 200% 100%;
 }
+
+/* Performance optimizations */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* Optimize rendering for images */
+img {
+  content-visibility: auto;
+}
+
+/* Hardware acceleration for animations */
+.animate-spin,
+.animate-bounce,
+.animate-pulse {
+  will-change: transform;
+}
+
+/* Prevent layout shifts */
+img, video {
+  max-width: 100%;
+  height: auto;
+}
+
+/* Smooth scrolling (respects user preferences) */
+@media (prefers-reduced-motion: no-preference) {
+  html {
+    scroll-behavior: smooth;
+  }
+}
+
+/* Touch optimization for mobile */
+@media (hover: none) {
+  .hover\:scale-105:active {
+    transform: scale(1.02);
+  }
+  
+  .hover\:shadow-lg:active {
+    box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1);
+  }
+}
+
+/* Optimize font rendering */
+body {
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Hide scrollbar but maintain functionality */
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+
+/* Better focus visibility */
+:focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 2px;
+}
