@@ -416,11 +416,20 @@ const Navbar: React.FC<NavbarProps> = ({
       if (mobileMenuRef.current && !mobileMenuRef.current.contains(event.target as Node) && isMenuOpen) {
         setIsMenuOpen(false)
       }
+      // Close the category mega menu when clicking outside
+      if (hoveredCategory) {
+        const megaMenu = document.querySelector('[data-mega-menu]')
+        const categoriesBar = document.querySelector('[data-categories-bar]')
+        const target = event.target as Node
+        if (megaMenu && categoriesBar && !megaMenu.contains(target) && !categoriesBar.contains(target)) {
+          setHoveredCategory(null)
+        }
+      }
     }
 
     document.addEventListener('mousedown', handleClickOutside)
     return () => document.removeEventListener('mousedown', handleClickOutside)
-  }, [isMenuOpen])
+  }, [isMenuOpen, hoveredCategory])
 
   const handleAddToCart = (product: FullProduct) => {
     if (onAddToCart) {
@@ -451,8 +460,8 @@ const Navbar: React.FC<NavbarProps> = ({
     return (
       <nav className={`sticky top-0 z-50 transition-all duration-500 ${
         scrolled 
-          ? 'bg-white shadow-xl border-b border-green-200' 
-          : 'bg-white/95 backdrop-blur-md border-b border-green-100 shadow-lg'
+          ? 'bg-gradient-to-r from-green-700 via-green-600 to-green-700 shadow-xl border-b border-green-800' 
+          : 'bg-gradient-to-r from-green-700 via-green-600 to-green-700 backdrop-blur-md border-b border-green-500 shadow-lg'
       }`}>
         <div className="max-w-7xl mx-auto px-3 sm:px-4 lg:px-8">
           <div className="flex justify-between items-center h-16 sm:h-20">
@@ -460,19 +469,34 @@ const Navbar: React.FC<NavbarProps> = ({
             <Button
               variant="ghost"
               onClick={() => router.push('/')}
-              className="flex items-center space-x-2 hover:bg-green-50 hover:text-green-600 rounded-xl transition-all duration-300"
+              className="flex items-center space-x-2 hover:bg-white/10 text-white rounded-xl transition-all duration-300"
             >
-              <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl flex items-center justify-center">
+              <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl flex items-center justify-center bg-white/10 p-1">
                 <img 
                   src="/logo-icon_vff.png" 
                   alt="BioPharma Logo" 
                   className="w-full h-full object-contain"
                 />
               </div>
-              <span className="hidden sm:block text-lg font-bold bg-gradient-to-r from-green-700 via-emerald-600 to-green-600 bg-clip-text text-transparent">
+              <span className="hidden sm:block text-lg font-bold text-white">
                 BioPharma
               </span>
             </Button>
+
+            {/* Search Bar */}
+            <div className="hidden md:block flex-1 max-w-xl mx-4 lg:mx-8">
+              <SearchCommand
+                onProductClick={(product) => {
+                  router.push(`/product/${product._id}`)
+                }}
+                onCategorySelect={(categoryName) => {
+                  router.push(`/?category=${categoryName}`)
+                }}
+                onSearchSubmit={(term) => {
+                  router.push(`/?search=${term}`)
+                }}
+              />
+            </div>
 
             {/* Right Actions: Cart & Profile */}
             <div className="flex items-center space-x-2 sm:space-x-3">
@@ -480,7 +504,7 @@ const Navbar: React.FC<NavbarProps> = ({
               <Button 
                 variant="ghost" 
                 size="sm" 
-                className="relative hover:bg-green-50 hover:text-green-600 rounded-xl transition-all duration-300 hover:scale-105" 
+                className="relative hover:bg-white/10 text-white rounded-xl transition-all duration-300 hover:scale-105" 
                 onClick={onCartOpen}
               >
                 <ShoppingCart className="h-5 w-5 sm:h-6 sm:w-6" />
@@ -503,12 +527,29 @@ const Navbar: React.FC<NavbarProps> = ({
                   variant="ghost" 
                   size="sm" 
                   onClick={() => onAuthModalOpen("login")}
-                  className="hover:bg-green-50 hover:text-green-600 rounded-xl transition-all duration-300 hover:scale-105"
+                  className="hover:bg-white/10 text-white rounded-xl transition-all duration-300 hover:scale-105"
                 >
                   <User className="h-5 w-5 sm:h-6 sm:w-6" />
                 </Button>
               )}
             </div>
+          </div>
+
+          {/* Mobile Search Bar */}
+          <div className="md:hidden pb-3">
+            <SearchCommand
+              onProductClick={(product) => {
+                router.push(`/product/${product._id}`)
+              }}
+              onCategorySelect={(categoryName) => {
+                router.push(`/?category=${categoryName}`)
+              }}
+              onSearchSubmit={(term) => {
+                router.push(`/?search=${term}`)
+              }}
+              isMobile={true}
+              className="w-full"
+            />
           </div>
         </div>
       </nav>
@@ -850,6 +891,7 @@ const Navbar: React.FC<NavbarProps> = ({
 
       {/* Categories Bar with Mega Menu - Desktop Only */}
       <div 
+        data-categories-bar
         className={`hidden lg:block bg-gradient-to-r from-green-700 via-green-600 to-green-700 shadow-lg transition-all duration-500 sticky z-40 ${
           scrolled 
             ? 'top-[64px] sm:top-[80px] opacity-0 -translate-y-full pointer-events-none' 
@@ -953,6 +995,7 @@ const Navbar: React.FC<NavbarProps> = ({
           {/* Mega Menu Dropdown */}
           {hoveredCategory && categories.find(c => c._id === hoveredCategory) && (
             <div
+              data-mega-menu
               className="absolute left-0 right-0 bg-white shadow-2xl border-t-4 border-green-500 z-[100]"
               style={{
                 top: 'calc(100% + 8px)',
