@@ -116,7 +116,7 @@ const ReviewForm = ({ productId, user, onReviewSubmit, onCancel, showToast }: {
     setIsSubmitting(true)
     try {
       const token = localStorage.getItem('authToken')
-      const response = await fetch(`https://biopharma-backend.onrender.com/api/products/${productId}/reviews`, {
+      const response = await fetch(`/api/products/${productId}/reviews`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -286,7 +286,7 @@ const ProductDetailModal: React.FC<{
     
     setReviewsLoading(true)
     try {
-      const response = await fetch(`https://biopharma-backend.onrender.com/api/products/${product._id}/reviews`)
+      const response = await fetch(`/api/products/${product._id}/reviews`)
       const data = await response.json()
       setReviews(data.reviews || [])
     } catch (error) {

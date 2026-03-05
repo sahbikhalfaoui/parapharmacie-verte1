@@ -76,13 +76,9 @@ const getImageUrl = (imagePath?: string): string => {
     return imagePath
   }
   
-  // If imagePath starts with /uploads or similar, construct the full URL
-  if (imagePath.startsWith('/')) {
-    return `https://biopharma-backend.onrender.com${imagePath}`
-  }
-  
-  // Default to placeholder
-  return "/placeholder.jpg"
+  // For Cloudinary images, they should already be full URLs
+  // If not, assume it's a local path
+  return imagePath || "/placeholder.jpg"
 }
 
 // ==================== AUTH MODAL ====================
@@ -170,7 +166,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
     setError("")
 
     try {
-      const res = await fetch('https://biopharma-backend.onrender.com/api/auth/google', {
+      const res = await fetch('/api/auth/google', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ credential: response.credential }),
@@ -204,7 +200,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
     }
 
     try {
-      const endpoint = `https://biopharma-backend.onrender.com/api/auth/${mode === 'login' ? 'login' : 'register'}`
+      const endpoint = `/api/auth/${mode === 'login' ? 'login' : 'register'}`
       const payload = mode === 'login' 
         ? { email: formData.email, password: formData.password }
         : formData
@@ -551,7 +547,7 @@ export const CartSheet: React.FC<CartSheetProps> = ({
         paymentMethod: 'COD'
       }
 
-      const response = await fetch('https://biopharma-backend.onrender.com/api/orders', {
+      const response = await fetch('/api/orders', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

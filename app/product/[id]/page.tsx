@@ -214,7 +214,7 @@ export default function ProductPage() {
 
   const loadCategories = useCallback(async () => {
     try {
-      const response = await fetch('https://biopharma-backend.onrender.com/api/categories')
+      const response = await fetch('/api/categories')
       const data = await response.json()
       // Handle both response formats
       const categoriesData = data.categories || data
@@ -226,7 +226,7 @@ export default function ProductPage() {
 
   const loadProduct = useCallback(async () => {
     try {
-      const response = await fetch(`https://biopharma-backend.onrender.com/api/products/${productId}`)
+      const response = await fetch(`/api/products/${productId}`)
       const data = await response.json()
       // Handle both response formats: { product: {...} } or direct product object
       const productData = data.product || data
@@ -255,7 +255,7 @@ export default function ProductPage() {
   const loadReviews = useCallback(async () => {
     setReviewsLoading(true)
     try {
-      const response = await fetch(`https://biopharma-backend.onrender.com/api/products/${productId}/reviews`)
+      const response = await fetch(`/api/products/${productId}/reviews`)
       const data = await response.json()
       setReviews(data.reviews || [])
     } catch (error) {
@@ -269,7 +269,7 @@ export default function ProductPage() {
     if (!product) return
     
     try {
-      const response = await fetch(`https://biopharma-backend.onrender.com/api/products`)
+      const response = await fetch(`/api/products`)
       const data = await response.json()
       const allProducts = data.products || []
       
@@ -400,7 +400,7 @@ export default function ProductPage() {
       console.log('Submitting review:', reviewData)
       console.log('Token (first 20 chars):', token.substring(0, 20) + '...')
 
-      const response = await fetch(`https://biopharma-backend.onrender.com/api/products/${productId}/reviews`, {
+      const response = await fetch(`/api/products/${productId}/reviews`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -492,7 +492,7 @@ export default function ProductPage() {
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
             {/* Product Image */}
             <div className="lg:col-span-1">
-              <div className="relative aspect-square bg-gray-50 rounded-2xl overflow-hidden sticky top-24">
+              <div className="relative aspect-square bg-white rounded-2xl overflow-hidden sticky top-24 border border-gray-100">
                 {product.badge && (
                   <Badge className="absolute top-4 left-4 z-10 bg-red-500 text-white">
                     {product.badge}
@@ -501,7 +501,7 @@ export default function ProductPage() {
                 <img 
                   src={product.image || "/placeholder.jpg"} 
                   alt={product.name}
-                  className="w-full h-full object-cover"
+                  className="w-full h-full object-contain p-4"
                   loading="eager"
                   onError={(e) => {
                     e.currentTarget.src = "/placeholder.jpg"

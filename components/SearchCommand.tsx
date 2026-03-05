@@ -161,7 +161,7 @@ export const SearchCommand: React.FC<SearchCommandProps> = ({
 
   const loadPopularProducts = async () => {
     try {
-      const res = await fetch('https://biopharma-backend.onrender.com/api/products?limit=6&sortBy=rating&sortOrder=desc')
+      const res = await fetch('/api/products?limit=6&sortBy=rating&sortOrder=desc')
       if (res.ok) {
         const data = await res.json()
         const products = (data.products || []).slice(0, 6).map((p: any) => ({
@@ -170,7 +170,7 @@ export const SearchCommand: React.FC<SearchCommandProps> = ({
           price: p.price,
           image: p.image,
           categoryName: p.category?.name || 'Non catégorisé',
-          subcategoryName: p.subcategory?.name,
+          subcategoryName: p.subCategory?.name || p.subcategory?.name,
           rating: p.averageRating || 0,
           badge: p.badge,
           inStock: p.inStock
@@ -188,8 +188,8 @@ export const SearchCommand: React.FC<SearchCommandProps> = ({
     
     try {
       const [productsRes, categoriesRes] = await Promise.all([
-        fetch(`https://biopharma-backend.onrender.com/api/products?search=${encodeURIComponent(query)}&limit=10`),
-        fetch('https://biopharma-backend.onrender.com/api/categories')
+        fetch(`/api/products?search=${encodeURIComponent(query)}&limit=10`),
+        fetch('/api/categories')
       ])
 
       if (productsRes.ok && categoriesRes.ok) {
@@ -202,7 +202,7 @@ export const SearchCommand: React.FC<SearchCommandProps> = ({
           price: p.price,
           image: p.image,
           categoryName: p.category?.name || 'Non catégorisé',
-          subcategoryName: p.subcategory?.name,
+          subcategoryName: p.subCategory?.name || p.subcategory?.name,
           rating: p.averageRating || 0,
           badge: p.badge,
           inStock: p.inStock

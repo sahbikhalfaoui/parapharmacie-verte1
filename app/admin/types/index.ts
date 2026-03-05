@@ -68,6 +68,35 @@ export interface Stats {
   totalOrders: number;
   totalProducts: number;
   totalCategories: number;
+  analytics?: {
+    pageViews: {
+      today: number;
+      week: number;
+      month: number;
+    };
+    uniqueVisitors: {
+      today: number;
+      week: number;
+      month: number;
+    };
+    dailyViews?: Array<{
+      date: string;
+      views: number;
+      uniqueVisitors: number;
+    }>;
+    topPages?: Array<{
+      _id: string;
+      count: number;
+    }>;
+    revenue?: {
+      total: number;
+      month: number;
+    };
+    ordersByStatus?: Array<{
+      _id: string;
+      count: number;
+    }>;
+  };
 }
 
 export interface ModalState {

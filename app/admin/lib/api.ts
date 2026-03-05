@@ -1,7 +1,7 @@
 "use client"
 
-// API Configuration
-export const API_BASE_URL = 'https://biopharma-backend.onrender.com/api'
+// API Configuration - Using local Next.js API routes
+export const API_BASE_URL = '/api'
 
 // Get auth token from localStorage
 export const getAuthToken = (): string => {

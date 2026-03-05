@@ -82,7 +82,7 @@ const HeroSection: React.FC<HeroSectionProps> = ({ onAddToCart, onProductClick }
 
   const loadPromotionalProducts = async () => {
     try {
-      const response = await fetch('https://biopharma-backend.onrender.com/api/products?limit=20&sortBy=createdAt&sortOrder=desc')
+      const response = await fetch('/api/products?limit=20&sortBy=createdAt&sortOrder=desc')
       const data = await response.json()
       const products = (data.products || []).map((p: any) => ({
         _id: p._id,
@@ -90,7 +90,7 @@ const HeroSection: React.FC<HeroSectionProps> = ({ onAddToCart, onProductClick }
         price: parseFloat(p.price.toString().replace(/[^\d.-]/g, '')) || 0,
         image: p.image,
         categoryName: p.category?.name || 'Non catégorisé',
-        subcategoryName: p.subcategory?.name,
+        subcategoryName: p.subCategory?.name || p.subcategory?.name,
         description: p.description,
         badge: p.badge,
         originalPrice: p.originalPrice ? parseFloat(p.originalPrice.toString().replace(/[^\d.-]/g, '')) : null,

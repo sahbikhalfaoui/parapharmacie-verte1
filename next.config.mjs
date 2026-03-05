@@ -8,7 +8,22 @@ const nextConfig = {
   },
   images: {
     unoptimized: true,
+    remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: 'res.cloudinary.com',
+      },
+    ],
   },
+  // Critical: exclude Node.js-only packages from webpack bundling
+  serverExternalPackages: [
+    'mongoose',
+    'bcryptjs',
+    'jsonwebtoken',
+    'cloudinary',
+    'google-auth-library',
+    'multer-storage-cloudinary',
+  ],
   async headers() {
     return [
       {
@@ -18,12 +33,12 @@ const nextConfig = {
             key: 'Content-Security-Policy',
             value: [
               "default-src 'self'",
-              "script-src 'self' 'unsafe-eval' 'unsafe-inline'",
-              "style-src 'self' 'unsafe-inline'",
+              "script-src 'self' 'unsafe-eval' 'unsafe-inline' https://accounts.google.com https://apis.google.com",
+              "style-src 'self' 'unsafe-inline' https://accounts.google.com",
               "img-src 'self' data: https: blob:",
-              "font-src 'self' data:",
-              "connect-src 'self' https://biopharma-backend.onrender.com https://maps.app.goo.gl https://www.google.com",
-              "frame-src 'self' https://www.google.com",
+              "font-src 'self' data: https://fonts.gstatic.com",
+              "connect-src 'self' http://localhost:* https://accounts.google.com https://oauth2.googleapis.com https://maps.app.goo.gl https://www.google.com",
+              "frame-src 'self' https://accounts.google.com https://www.google.com",
             ].join('; '),
           },
         ],

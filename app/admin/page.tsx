@@ -354,6 +354,87 @@ export default function AdminDashboard() {
         </Card>
       </div>
 
+      {/* Analytics Section */}
+      {stats.analytics && (
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg">Visites Aujourd'hui</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-2">
+                <div className="flex justify-between">
+                  <span className="text-sm text-muted-foreground">Pages vues</span>
+                  <span className="text-2xl font-bold text-blue-600">{stats.analytics.pageViews.today}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-sm text-muted-foreground">Visiteurs uniques</span>
+                  <span className="text-lg font-semibold text-green-600">{stats.analytics.uniqueVisitors.today}</span>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg">Cette Semaine</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-2">
+                <div className="flex justify-between">
+                  <span className="text-sm text-muted-foreground">Pages vues</span>
+                  <span className="text-2xl font-bold text-blue-600">{stats.analytics.pageViews.week}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-sm text-muted-foreground">Visiteurs uniques</span>
+                  <span className="text-lg font-semibold text-green-600">{stats.analytics.uniqueVisitors.week}</span>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg">Ce Mois</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-2">
+                <div className="flex justify-between">
+                  <span className="text-sm text-muted-foreground">Pages vues</span>
+                  <span className="text-2xl font-bold text-blue-600">{stats.analytics.pageViews.month}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-sm text-muted-foreground">Visiteurs uniques</span>
+                  <span className="text-lg font-semibold text-green-600">{stats.analytics.uniqueVisitors.month}</span>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      )}
+
+      {/* Top Pages */}
+      {stats.analytics?.topPages && stats.analytics.topPages.length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Pages les Plus Visitées (Ce Mois)</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-3">
+              {stats.analytics.topPages.slice(0, 10).map((page, index) => (
+                <div key={page._id} className="flex items-center justify-between p-2 border-b last:border-0">
+                  <div className="flex items-center space-x-3">
+                    <span className="text-sm font-bold text-muted-foreground">#{index + 1}</span>
+                    <span className="text-sm">{page._id}</span>
+                  </div>
+                  <Badge variant="secondary">{page.count} visites</Badge>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       <div className="grid lg:grid-cols-2 gap-6">
         <Card>
           <CardHeader>

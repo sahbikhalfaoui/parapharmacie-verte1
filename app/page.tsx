@@ -82,7 +82,7 @@ interface NavbarProduct {
 }
 
 export default function VitaPharmWebsite() {
-  const [showLoading, setShowLoading] = useState(true)
+  const [showLoading, setShowLoading] = useState(false)
   const [authModal, setAuthModal] = useState({ isOpen: false, mode: "login" as "login" | "register" })
   const [activeCategory, setActiveCategory] = useState("Tous")
   const [activeSubcategory, setActiveSubcategory] = useState("Tous")
@@ -127,11 +127,6 @@ export default function VitaPharmWebsite() {
 
   // Load cart and favorites from localStorage on component mount
   useEffect(() => {
-    // Set loading timer - reduced for faster perceived performance
-    const loadingTimer = setTimeout(() => {
-      setShowLoading(false)
-    }, 1500)
-
     const token = localStorage.getItem('authToken')
     const userData = localStorage.getItem('userData')
     
@@ -174,8 +169,6 @@ export default function VitaPharmWebsite() {
     }
     
     loadData()
-
-    return () => clearTimeout(loadingTimer)
   }, [])
 
   // Save cart to localStorage whenever it changes
@@ -245,11 +238,18 @@ export default function VitaPharmWebsite() {
   const loadData = async () => {
     setIsLoading(true)
     try {
-      const categoriesResponse = await fetch('https://biopharma-backend.onrender.com/api/categories')
-      const categoriesData = await categoriesResponse.json()
+      // Fetch all data in parallel for speed
+      const [categoriesResponse, subcategoriesResponse, productsResponse] = await Promise.all([
+        fetch('/api/categories'),
+        fetch('/api/subcategories'),
+        fetch('/api/products?limit=2500')
+      ])
       
-      const subcategoriesResponse = await fetch('https://biopharma-backend.onrender.com/api/subcategories')
-      const subcategoriesData = await subcategoriesResponse.json()
+      const [categoriesData, subcategoriesData, productsData] = await Promise.all([
+        categoriesResponse.json(),
+        subcategoriesResponse.json(),
+        productsResponse.json()
+      ])
       
       const categoriesWithSubs = categoriesData.map((cat: any) => ({
         ...cat,
@@ -262,14 +262,11 @@ export default function VitaPharmWebsite() {
       const categoryNames = categoriesWithSubs.map((cat: any) => cat.name) || []
       setCategories(['Tous', ...categoryNames])
 
-      const productsResponse = await fetch('https://biopharma-backend.onrender.com/api/products')
-      const productsData = await productsResponse.json()
-      
       const transformedProducts = (productsData.products || []).map((product: any) => ({
         ...product,
         id: product._id,
         categoryName: product.category?.name || 'Non catégorisé',
-        subcategoryName: product.subcategory?.name || 'Aucune',
+        subcategoryName: product.subCategory?.name || product.subcategory?.name || 'Aucune',
         brand: product.brand || 'Marque générique',
         price: parseFloat(product.price.toString().replace(/[^\d.-]/g, '')) || 0,
         originalPrice: product.originalPrice ? parseFloat(product.originalPrice.toString().replace(/[^\d.-]/g, '')) : null,
@@ -394,7 +391,7 @@ export default function VitaPharmWebsite() {
     // If not found, fetch it from the API
     try {
       console.log('Fetching product details from API for ID:', navbarProduct._id);
-      const response = await fetch(`https://biopharma-backend.onrender.com/api/products/${navbarProduct._id}`);
+      const response = await fetch(`/api/products/${navbarProduct._id}`);
       
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
@@ -410,7 +407,7 @@ export default function VitaPharmWebsite() {
         price: parseFloat(productData.price.toString().replace(/[^\d.-]/g, '')) || 0,
         image: productData.image || '/placeholder.jpg',
         categoryName: productData.category?.name || navbarProduct.categoryName || 'Non catégorisé',
-        subcategoryName: productData.subcategory?.name || navbarProduct.subcategoryName || 'Aucune',
+        subcategoryName: productData.subCategory?.name || productData.subcategory?.name || navbarProduct.subcategoryName || 'Aucune',
         quantity: 1,
         description: productData.description || '',
         averageRating: productData.averageRating || navbarProduct.rating || 0,
@@ -706,7 +703,7 @@ export default function VitaPharmWebsite() {
               Votre Partenaire Santé de Confiance
             </h2>
             <p className="text-lg text-gray-600 max-w-3xl mx-auto leading-relaxed">
-              Depuis plus de 20 ans, BioPharma s'engage à fournir des produits pharmaceutiques et de bien-être de la plus haute qualité pour améliorer votre santé au quotidien.
+              Depuis plus de 5 ans, BioPharma s'engage à fournir des produits pharmaceutiques et de bien-être de la plus haute qualité pour améliorer votre santé au quotidien.
             </p>
           </div>
 
