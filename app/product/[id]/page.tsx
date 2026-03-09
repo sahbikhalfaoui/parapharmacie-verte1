@@ -308,6 +308,47 @@ export default function ProductPage() {
     }
   }, [product?._id]) // eslint-disable-line react-hooks/exhaustive-deps
 
+  // SEO: Update page title and inject JSON-LD for product
+  useEffect(() => {
+    if (!product) return
+    document.title = `${product.name} | BioPharma`
+    
+    const jsonLd = {
+      '@context': 'https://schema.org',
+      '@type': 'Product',
+      name: product.name,
+      description: product.description || '',
+      image: product.image || '',
+      brand: { '@type': 'Brand', name: 'BioPharma' },
+      offers: {
+        '@type': 'Offer',
+        price: product.price,
+        priceCurrency: 'TND',
+        availability: product.inStock !== false ? 'https://schema.org/InStock' : 'https://schema.org/OutOfStock',
+        url: `https://biopharma.tn/product/${product._id}`,
+      },
+      ...(product.averageRating && product.totalReviews && product.totalReviews > 0 ? {
+        aggregateRating: {
+          '@type': 'AggregateRating',
+          ratingValue: product.averageRating,
+          reviewCount: product.totalReviews,
+        }
+      } : {}),
+    }
+    
+    // Remove old JSON-LD if exists
+    const existing = document.querySelector('script[data-product-jsonld]')
+    if (existing) existing.remove()
+    
+    const script = document.createElement('script')
+    script.type = 'application/ld+json'
+    script.setAttribute('data-product-jsonld', 'true')
+    script.textContent = JSON.stringify(jsonLd)
+    document.head.appendChild(script)
+    
+    return () => { script.remove() }
+  }, [product])
+
   const handleAddToCart = useCallback(() => {
     if (!product) return
     

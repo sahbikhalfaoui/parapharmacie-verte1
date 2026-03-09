@@ -936,11 +936,16 @@ export default function VitaPharmWebsite() {
             <div>
               <h3 className="font-bold text-lg mb-6">Navigation</h3>
               <ul className="space-y-3">
-                {["Accueil", "Produits", "À Propos", "Contact"].map((link, linkIndex) => (
+                {[
+                  { label: "Accueil", href: "#hero" },
+                  { label: "Produits", href: "#products" },
+                  { label: "À Propos", href: "#about" },
+                  { label: "Contact", href: "/contact" }
+                ].map((link, linkIndex) => (
                   <li key={linkIndex}>
-                    <a href="#" className="text-gray-400 hover:text-green-400 transition-colors duration-200 flex items-center group">
+                    <a href={link.href} className="text-gray-400 hover:text-green-400 transition-colors duration-200 flex items-center group">
                       <span className="w-0 h-0.5 bg-green-400 group-hover:w-4 mr-0 group-hover:mr-2 transition-all duration-200"></span>
-                      {link}
+                      {link.label}
                     </a>
                   </li>
                 ))}

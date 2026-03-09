@@ -4,6 +4,10 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { 
+  BarChart, Bar, LineChart, Line, PieChart, Pie, Cell, 
+  XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend, Area, AreaChart
+} from 'recharts'
+import { 
   DashboardIcon, 
   PackageIcon, 
   FolderIcon, 
@@ -356,61 +360,162 @@ export default function AdminDashboard() {
 
       {/* Analytics Section */}
       {stats.analytics && (
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-lg">Visites Aujourd'hui</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-2">
-                <div className="flex justify-between">
-                  <span className="text-sm text-muted-foreground">Pages vues</span>
-                  <span className="text-2xl font-bold text-blue-600">{stats.analytics.pageViews.today}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-sm text-muted-foreground">Visiteurs uniques</span>
-                  <span className="text-lg font-semibold text-green-600">{stats.analytics.uniqueVisitors.today}</span>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+        <>
+          {/* Summary Cards */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            <Card className="border-blue-200 bg-blue-50/50">
+              <CardContent className="p-6">
+                <p className="text-sm font-medium text-blue-600">Pages Vues Aujourd'hui</p>
+                <p className="text-3xl font-bold text-blue-700">{stats.analytics.pageViews.today}</p>
+                <p className="text-xs text-muted-foreground mt-1">Semaine: {stats.analytics.pageViews.week} · Mois: {stats.analytics.pageViews.month}</p>
+              </CardContent>
+            </Card>
+            <Card className="border-green-200 bg-green-50/50">
+              <CardContent className="p-6">
+                <p className="text-sm font-medium text-green-600">Visiteurs Uniques Aujourd'hui</p>
+                <p className="text-3xl font-bold text-green-700">{stats.analytics.uniqueVisitors.today}</p>
+                <p className="text-xs text-muted-foreground mt-1">Semaine: {stats.analytics.uniqueVisitors.week} · Mois: {stats.analytics.uniqueVisitors.month}</p>
+              </CardContent>
+            </Card>
+            <Card className="border-purple-200 bg-purple-50/50">
+              <CardContent className="p-6">
+                <p className="text-sm font-medium text-purple-600">Revenus Total</p>
+                <p className="text-3xl font-bold text-purple-700">{(stats.analytics.revenue?.total || 0).toFixed(3)} <span className="text-sm">TND</span></p>
+                <p className="text-xs text-muted-foreground mt-1">Ce mois: {(stats.analytics.revenue?.month || 0).toFixed(3)} TND</p>
+              </CardContent>
+            </Card>
+            <Card className="border-orange-200 bg-orange-50/50">
+              <CardContent className="p-6">
+                <p className="text-sm font-medium text-orange-600">Taux Conversion</p>
+                <p className="text-3xl font-bold text-orange-700">
+                  {stats.analytics.uniqueVisitors.month > 0 
+                    ? ((stats.totalOrders / stats.analytics.uniqueVisitors.month) * 100).toFixed(1)
+                    : '0.0'}%
+                </p>
+                <p className="text-xs text-muted-foreground mt-1">Commandes / Visiteurs uniques</p>
+              </CardContent>
+            </Card>
+          </div>
 
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-lg">Cette Semaine</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-2">
-                <div className="flex justify-between">
-                  <span className="text-sm text-muted-foreground">Pages vues</span>
-                  <span className="text-2xl font-bold text-blue-600">{stats.analytics.pageViews.week}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-sm text-muted-foreground">Visiteurs uniques</span>
-                  <span className="text-lg font-semibold text-green-600">{stats.analytics.uniqueVisitors.week}</span>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+          {/* Daily Views Chart */}
+          {stats.analytics.dailyViews && stats.analytics.dailyViews.length > 0 && (
+            <Card>
+              <CardHeader>
+                <CardTitle>Trafic des 7 Derniers Jours</CardTitle>
+                <CardDescription>Pages vues et visiteurs uniques par jour</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <ResponsiveContainer width="100%" height={300}>
+                  <AreaChart data={stats.analytics.dailyViews}>
+                    <defs>
+                      <linearGradient id="colorViews" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.3}/>
+                        <stop offset="95%" stopColor="#3b82f6" stopOpacity={0}/>
+                      </linearGradient>
+                      <linearGradient id="colorVisitors" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor="#22c55e" stopOpacity={0.3}/>
+                        <stop offset="95%" stopColor="#22c55e" stopOpacity={0}/>
+                      </linearGradient>
+                    </defs>
+                    <CartesianGrid strokeDasharray="3 3" opacity={0.3} />
+                    <XAxis dataKey="date" tick={{ fontSize: 12 }} tickFormatter={(val) => {
+                      const d = new Date(val)
+                      return `${d.getDate()}/${d.getMonth() + 1}`
+                    }} />
+                    <YAxis tick={{ fontSize: 12 }} />
+                    <Tooltip 
+                      labelFormatter={(val) => {
+                        const d = new Date(val as string)
+                        return d.toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' })
+                      }}
+                    />
+                    <Legend />
+                    <Area type="monotone" dataKey="views" name="Pages vues" stroke="#3b82f6" fillOpacity={1} fill="url(#colorViews)" strokeWidth={2} />
+                    <Area type="monotone" dataKey="uniqueVisitors" name="Visiteurs uniques" stroke="#22c55e" fillOpacity={1} fill="url(#colorVisitors)" strokeWidth={2} />
+                  </AreaChart>
+                </ResponsiveContainer>
+              </CardContent>
+            </Card>
+          )}
 
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-lg">Ce Mois</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-2">
-                <div className="flex justify-between">
-                  <span className="text-sm text-muted-foreground">Pages vues</span>
-                  <span className="text-2xl font-bold text-blue-600">{stats.analytics.pageViews.month}</span>
+          <div className="grid lg:grid-cols-2 gap-6">
+            {/* Orders by Status Chart */}
+            {stats.analytics.ordersByStatus && stats.analytics.ordersByStatus.length > 0 && (
+              <Card>
+                <CardHeader>
+                  <CardTitle>Commandes par Statut</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <ResponsiveContainer width="100%" height={280}>
+                    <PieChart>
+                      <Pie
+                        data={stats.analytics.ordersByStatus.map(s => ({
+                          name: s._id === 'pending' ? 'En attente' : s._id === 'confirmed' ? 'Confirmée' : s._id === 'preparing' ? 'Préparation' : s._id === 'shipped' ? 'Expédiée' : s._id === 'delivered' ? 'Livrée' : s._id === 'cancelled' ? 'Annulée' : s._id,
+                          value: s.count
+                        }))}
+                        cx="50%"
+                        cy="50%"
+                        innerRadius={60}
+                        outerRadius={100}
+                        paddingAngle={3}
+                        dataKey="value"
+                        label={({ name, value }) => `${name}: ${value}`}
+                      >
+                        {stats.analytics.ordersByStatus.map((_, index) => (
+                          <Cell key={`cell-${index}`} fill={['#f59e0b', '#3b82f6', '#8b5cf6', '#06b6d4', '#22c55e', '#ef4444'][index % 6]} />
+                        ))}
+                      </Pie>
+                      <Tooltip />
+                    </PieChart>
+                  </ResponsiveContainer>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Revenue Card */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Revenus</CardTitle>
+                <CardDescription>Analyse des ventes</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-6">
+                  <div className="flex items-center justify-between p-4 rounded-lg bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200">
+                    <div>
+                      <p className="text-sm text-green-600 font-medium">Revenus Total</p>
+                      <p className="text-2xl font-bold text-green-700">{(stats.analytics.revenue?.total || 0).toFixed(3)} TND</p>
+                    </div>
+                    <div className="h-12 w-12 rounded-full bg-green-100 flex items-center justify-center">
+                      <span className="text-green-600 text-lg">💰</span>
+                    </div>
+                  </div>
+                  <div className="flex items-center justify-between p-4 rounded-lg bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200">
+                    <div>
+                      <p className="text-sm text-blue-600 font-medium">Revenus Ce Mois</p>
+                      <p className="text-2xl font-bold text-blue-700">{(stats.analytics.revenue?.month || 0).toFixed(3)} TND</p>
+                    </div>
+                    <div className="h-12 w-12 rounded-full bg-blue-100 flex items-center justify-center">
+                      <span className="text-blue-600 text-lg">📈</span>
+                    </div>
+                  </div>
+                  <div className="flex items-center justify-between p-4 rounded-lg bg-gradient-to-r from-purple-50 to-violet-50 border border-purple-200">
+                    <div>
+                      <p className="text-sm text-purple-600 font-medium">Panier Moyen</p>
+                      <p className="text-2xl font-bold text-purple-700">
+                        {stats.totalOrders > 0
+                          ? ((stats.analytics.revenue?.total || 0) / stats.totalOrders).toFixed(3)
+                          : '0.000'} TND
+                      </p>
+                    </div>
+                    <div className="h-12 w-12 rounded-full bg-purple-100 flex items-center justify-center">
+                      <span className="text-purple-600 text-lg">🛒</span>
+                    </div>
+                  </div>
                 </div>
-                <div className="flex justify-between">
-                  <span className="text-sm text-muted-foreground">Visiteurs uniques</span>
-                  <span className="text-lg font-semibold text-green-600">{stats.analytics.uniqueVisitors.month}</span>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
+              </CardContent>
+            </Card>
+          </div>
+        </>
       )}
 
       {/* Top Pages */}
@@ -420,17 +525,15 @@ export default function AdminDashboard() {
             <CardTitle>Pages les Plus Visitées (Ce Mois)</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="space-y-3">
-              {stats.analytics.topPages.slice(0, 10).map((page, index) => (
-                <div key={page._id} className="flex items-center justify-between p-2 border-b last:border-0">
-                  <div className="flex items-center space-x-3">
-                    <span className="text-sm font-bold text-muted-foreground">#{index + 1}</span>
-                    <span className="text-sm">{page._id}</span>
-                  </div>
-                  <Badge variant="secondary">{page.count} visites</Badge>
-                </div>
-              ))}
-            </div>
+            <ResponsiveContainer width="100%" height={Math.max(250, stats.analytics.topPages.slice(0, 10).length * 40)}>
+              <BarChart data={stats.analytics.topPages.slice(0, 10)} layout="vertical" margin={{ left: 100 }}>
+                <CartesianGrid strokeDasharray="3 3" opacity={0.3} />
+                <XAxis type="number" tick={{ fontSize: 12 }} />
+                <YAxis type="category" dataKey="_id" tick={{ fontSize: 11 }} width={100} />
+                <Tooltip />
+                <Bar dataKey="count" name="Visites" fill="#3b82f6" radius={[0, 4, 4, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
           </CardContent>
         </Card>
       )}

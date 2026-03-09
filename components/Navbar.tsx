@@ -471,7 +471,7 @@ const Navbar: React.FC<NavbarProps> = ({
               onClick={() => router.push('/')}
               className="flex items-center space-x-2 hover:bg-white/10 text-white rounded-xl transition-all duration-300"
             >
-              <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl flex items-center justify-center bg-white/10 p-1">
+              <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl flex items-center justify-center bg-white p-1">
                 <img 
                   src="/logo-icon_vff.png" 
                   alt="BioPharma Logo" 

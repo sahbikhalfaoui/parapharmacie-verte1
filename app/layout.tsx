@@ -1,4 +1,4 @@
-import type { Metadata } from 'next'
+import type { Metadata, Viewport } from 'next'
 import { GeistSans } from 'geist/font/sans'
 import { GeistMono } from 'geist/font/mono'
 import { Analytics } from '@vercel/analytics/next'
@@ -54,17 +54,18 @@ export const metadata: Metadata = {
       'max-snippet': -1,
     },
   },
-  viewport: {
-    width: 'device-width',
-    initialScale: 1,
-    maximumScale: 5,
-    userScalable: true,
-  },
-  themeColor: '#16a34a',
   manifest: '/manifest.json',
   alternates: {
     canonical: 'https://biopharma.tn',
   },
+}
+
+export const viewport: Viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  maximumScale: 5,
+  userScalable: true,
+  themeColor: '#16a34a',
 }
 
 export default function RootLayout({
@@ -72,11 +73,61 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode
 }>) {
+  const jsonLd = {
+    '@context': 'https://schema.org',
+    '@graph': [
+      {
+        '@type': 'Organization',
+        '@id': 'https://biopharma.tn/#organization',
+        name: 'BioPharma',
+        url: 'https://biopharma.tn',
+        logo: {
+          '@type': 'ImageObject',
+          url: 'https://biopharma.tn/logo-icon_vff.png',
+        },
+        description: 'Votre parapharmacie en ligne de confiance en Tunisie. Produits pharmaceutiques, compléments alimentaires et cosmétiques.',
+        address: {
+          '@type': 'PostalAddress',
+          addressCountry: 'TN',
+        },
+        sameAs: [],
+      },
+      {
+        '@type': 'WebSite',
+        '@id': 'https://biopharma.tn/#website',
+        url: 'https://biopharma.tn',
+        name: 'BioPharma',
+        publisher: { '@id': 'https://biopharma.tn/#organization' },
+        potentialAction: {
+          '@type': 'SearchAction',
+          target: {
+            '@type': 'EntryPoint',
+            urlTemplate: 'https://biopharma.tn/?search={search_term_string}',
+          },
+          'query-input': 'required name=search_term_string',
+        },
+      },
+      {
+        '@type': 'WebPage',
+        '@id': 'https://biopharma.tn/#webpage',
+        url: 'https://biopharma.tn',
+        name: 'BioPharma - Votre Parapharmacie en Ligne',
+        isPartOf: { '@id': 'https://biopharma.tn/#website' },
+        about: { '@id': 'https://biopharma.tn/#organization' },
+        description: 'Découvrez nos produits pharmaceutiques, compléments alimentaires, cosmétiques et soins. Livraison rapide en Tunisie.',
+      },
+    ],
+  }
+
   return (
     <html lang="fr">
       <head>
         <link rel="icon" href="/favicon.ico" sizes="any" />
         <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+        />
       </head>
       <body className={`font-sans ${GeistSans.variable} ${GeistMono.variable}`}>
         <AnalyticsTracker />

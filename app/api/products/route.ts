@@ -19,6 +19,8 @@ export async function GET(request: NextRequest) {
     const inStock = searchParams.get('inStock')
     const fields = searchParams.get('fields') // optional field selection
     
+    const badge = searchParams.get('badge')
+    
     const query: Record<string, any> = { isActive: true }
     
     if (inStock !== undefined && inStock !== null) {
@@ -27,6 +29,7 @@ export async function GET(request: NextRequest) {
     if (category) query.category = category
     if (subCategory) query.subCategory = subCategory
     if (search) query.name = { $regex: search, $options: 'i' }
+    if (badge) query.badge = { $regex: `^${badge}$`, $options: 'i' }
     
     const sortOptions: Record<string, 1 | -1> = {}
     sortOptions[sortBy] = sortOrder === 'desc' ? -1 : 1

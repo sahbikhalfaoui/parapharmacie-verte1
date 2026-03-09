@@ -82,7 +82,7 @@ const HeroSection: React.FC<HeroSectionProps> = ({ onAddToCart, onProductClick }
 
   const loadPromotionalProducts = async () => {
     try {
-      const response = await fetch('/api/products?limit=20&sortBy=createdAt&sortOrder=desc')
+      const response = await fetch('/api/products?badge=promo&limit=20&fields=name,price,originalPrice,image,category,subCategory,badge,averageRating,totalReviews,inStock&sortBy=createdAt&sortOrder=desc')
       const data = await response.json()
       const products = (data.products || []).map((p: any) => ({
         _id: p._id,
@@ -91,16 +91,13 @@ const HeroSection: React.FC<HeroSectionProps> = ({ onAddToCart, onProductClick }
         image: p.image,
         categoryName: p.category?.name || 'Non catégorisé',
         subcategoryName: p.subCategory?.name || p.subcategory?.name,
-        description: p.description,
         badge: p.badge,
         originalPrice: p.originalPrice ? parseFloat(p.originalPrice.toString().replace(/[^\d.-]/g, '')) : null,
         averageRating: p.averageRating || 0,
         totalReviews: p.totalReviews || 0,
         inStock: p.inStock !== false
       }))
-      // Filter only promotional products (with badge 'promo')
-      const promoProducts = products.filter(p => p.badge?.toLowerCase() === 'promo')
-      setPromotionalProducts(promoProducts)
+      setPromotionalProducts(products)
     } catch (error) {
       console.error('Error loading promotional products:', error)
     }
@@ -587,7 +584,7 @@ const HeroSection: React.FC<HeroSectionProps> = ({ onAddToCart, onProductClick }
                           {product.description}
                         </motion.p>
 
-                        {product.averageRating > 0 && (
+                        {(product.averageRating || 0) > 0 && (
                           <motion.div 
                             initial={{ opacity: 0, scale: 0.8 }}
                             animate={{ opacity: 1, scale: 1 }}
@@ -604,7 +601,7 @@ const HeroSection: React.FC<HeroSectionProps> = ({ onAddToCart, onProductClick }
                                 >
                                   <Star
                                     className={`w-4 h-4 ${
-                                      i < Math.floor(product.averageRating)
+                                      i < Math.floor(product.averageRating || 0)
                                         ? 'text-yellow-400 fill-yellow-400'
                                         : 'text-gray-300'
                                     }`}
@@ -613,7 +610,7 @@ const HeroSection: React.FC<HeroSectionProps> = ({ onAddToCart, onProductClick }
                               ))}
                             </div>
                             <span className="text-sm text-gray-600 font-medium">
-                              {product.averageRating.toFixed(1)} ({product.totalReviews})
+                              {(product.averageRating || 0).toFixed(1)} ({product.totalReviews})
                             </span>
                           </motion.div>
                         )}
