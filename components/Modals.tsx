@@ -98,7 +98,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
   const [showPassword, setShowPassword] = useState(false)
   const [error, setError] = useState("")
 
-  const GOOGLE_CLIENT_ID = '775881234717-36l5t936hnf5pj8f7uhjg8hf17dm46h3.apps.googleusercontent.com'
+  const GOOGLE_CLIENT_ID = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID
 
   // Initialize Google Sign-In
   useEffect(() => {
@@ -127,6 +127,10 @@ export const AuthModal: React.FC<AuthModalProps> = ({
 
     const initializeGoogle = () => {
       if (!window.google) return
+      if (!GOOGLE_CLIENT_ID) {
+        setError("Configuration Google manquante: NEXT_PUBLIC_GOOGLE_CLIENT_ID")
+        return
+      }
 
       try {
         window.google.accounts.id.initialize({

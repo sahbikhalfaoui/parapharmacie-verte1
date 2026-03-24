@@ -16,10 +16,7 @@ import {
   Award,
   Heart,
   TrendingUp,
-  Facebook,
-  Instagram,
-  Twitter,
-  Linkedin
+  Facebook
 } from "lucide-react"
 import HeroSection from "@/components/HeroSection"
 import ProductsSection from "@/components/ProductsSection"
@@ -459,7 +456,7 @@ export default function VitaPharmWebsite() {
     }
   };
 
-  const addToCart = (product: Product) => {
+  const addToCart = (product: Product, quantity: number = 1) => {
     setCartItems(prevItems => {
       const existingItem = prevItems.find(item => item._id === product._id)
       let newItems
@@ -468,13 +465,13 @@ export default function VitaPharmWebsite() {
         newItems = prevItems.map(item =>
           item._id === product._id ? { 
             ...item, 
-            quantity: item.quantity + 1 
+            quantity: item.quantity + quantity 
           } : item
         )
       } else {
         newItems = [...prevItems, { 
           ...product, 
-          quantity: 1,
+          quantity,
           price: parseFloat(product.price.toString().replace(/[^\d.-]/g, '')) || 0
         }]
       }
@@ -928,8 +925,23 @@ export default function VitaPharmWebsite() {
               <p className="text-gray-400 leading-relaxed mb-6">
                 Votre partenaire santé de confiance pour une vie plus saine et équilibrée.
               </p>
-              <div className="flex space-x-4">
-                
+              <div className="flex items-center gap-3">
+                <a
+                  href="https://www.facebook.com/Biopharma.parapharmacie"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  aria-label="Facebook BioPharma"
+                  className="w-10 h-10 rounded-full border border-gray-700 text-gray-300 hover:text-white hover:border-green-500 hover:bg-green-600/20 transition-colors flex items-center justify-center"
+                >
+                  <Facebook className="w-5 h-5" />
+                </a>
+                <a
+                  href="mailto:biopharma.tunisie@gmail.com"
+                  aria-label="Email BioPharma"
+                  className="w-10 h-10 rounded-full border border-gray-700 text-gray-300 hover:text-white hover:border-green-500 hover:bg-green-600/20 transition-colors flex items-center justify-center"
+                >
+                  <Mail className="w-5 h-5" />
+                </a>
               </div>
             </div>
 

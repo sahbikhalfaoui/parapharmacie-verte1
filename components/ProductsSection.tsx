@@ -78,7 +78,7 @@ interface ProductsSectionProps {
   onSubcategoryChange: (subcategory: string) => void
   onSortChange: (sortBy: string) => void
   onClearFilters: () => void
-  onAddToCart: (product: Product) => void
+  onAddToCart: (product: Product, quantity?: number) => void
   onPriceRangeChange: (range: [number, number]) => void
   onMinRatingChange: (rating: number) => void
   onCurrentPageChange: (page: number) => void
@@ -263,7 +263,7 @@ const ProductDetailModal: React.FC<{
   product: Product | null
   isOpen: boolean
   onClose: () => void
-  onAddToCart: (product: Product) => void
+  onAddToCart: (product: Product, quantity?: number) => void
   user: User | null
   showToast: ProductsSectionProps['showToast']
 }> = ({ product, isOpen, onClose, onAddToCart, user, showToast }) => {
@@ -302,10 +302,7 @@ const ProductDetailModal: React.FC<{
     
     setIsAddingToCart(true)
     try {
-      for (let i = 0; i < quantity; i++) {
-        onAddToCart(product)
-      }
-      showToast(`${product.name} ajouté au panier`, "success")
+      onAddToCart(product, quantity)
       
       // Animation success feedback
       await new Promise(resolve => setTimeout(resolve, 500))
@@ -698,8 +695,7 @@ const ProductsSection: React.FC<ProductsSectionProps> = ({
   const handleAddToCartWithAnimation = async (product: Product) => {
     setAddingToCartId(product._id)
     await new Promise(resolve => setTimeout(resolve, 300)) // Animation delay
-    onAddToCart(product)
-    showToast(`${product.name} ajouté au panier`, "success")
+    onAddToCart(product, 1)
     setAddingToCartId(null)
   }
 
@@ -1043,16 +1039,17 @@ const ProductsSection: React.FC<ProductsSectionProps> = ({
               </motion.div>
             </div>
           ) : viewMode === 'grid' ? (
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
               {paginatedProducts.map((product, index) => (
                 <motion.div
                   key={product._id}
                   initial={{ opacity: 0, scale: 0.9 }}
                   animate={{ opacity: 1, scale: 1 }}
                   transition={{ duration: 0.3, delay: index * 0.05 }}
+                  className="h-full"
                 >
                   <Card 
-                    className="group hover:shadow-xl transition-all duration-300 cursor-pointer overflow-hidden border-green-100"
+                    className="group h-full hover:shadow-xl transition-all duration-300 cursor-pointer overflow-hidden border-green-100"
                     onClick={() => router.push(`/product/${product._id}`)}
                   >
                     <div className="relative aspect-square overflow-hidden bg-gray-50">
@@ -1151,8 +1148,8 @@ const ProductsSection: React.FC<ProductsSectionProps> = ({
                     className="group hover:shadow-xl transition-all duration-300 cursor-pointer overflow-hidden border-green-100"
                     onClick={() => router.push(`/product/${product._id}`)}
                   >
-                    <div className="flex">
-                      <div className="relative w-32 h-32 flex-shrink-0 bg-gray-50">
+                    <div className="flex flex-col sm:flex-row">
+                      <div className="relative w-full h-44 sm:w-32 sm:h-32 flex-shrink-0 bg-gray-50">
                         {product.badge && (
                           <Badge className="absolute top-2 left-2 z-10 bg-red-500 text-white text-xs">
                             {product.badge}

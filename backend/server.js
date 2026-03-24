@@ -48,7 +48,7 @@ app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 // Configuration
 const JWT_SECRET = process.env.JWT_SECRET || 'votre-secret-jwt-tres-securise';
 const MONGODB_URI = process.env.MONGODB_URI || 'mongodb+srv://biopharma:admin123@biopharma.jk3ygej.mongodb.net/vitapharm?retryWrites=true&w=majority';
-const GOOGLE_CLIENT_ID = '775881234717-36l5t936hnf5pj8f7uhjg8hf17dm46h3.apps.googleusercontent.com';
+const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID;
 const googleClient = new OAuth2Client(GOOGLE_CLIENT_ID);
 
 // Test endpoint
@@ -735,6 +735,10 @@ app.get('/api/orders/user', auth, async (req, res) => {
 // Google Auth
 app.post('/api/auth/google', async (req, res) => {
   try {
+    if (!GOOGLE_CLIENT_ID) {
+      return res.status(500).json({ error: 'GOOGLE_CLIENT_ID non configuré' });
+    }
+
     const { credential } = req.body;
 
     if (!credential) {

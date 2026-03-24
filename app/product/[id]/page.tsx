@@ -17,7 +17,9 @@ import {
   Calendar,
   User as UserIcon,
   Heart,
-  Send
+  Send,
+  Facebook,
+  Mail
 } from "lucide-react"
 
 interface Product {
@@ -593,8 +595,8 @@ export default function ProductPage() {
                   )}
                 </div>
                 
-                <div className="flex items-center space-x-4">
-                  <div className="flex items-center border border-gray-200 rounded-lg">
+                <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 sm:gap-4">
+                  <div className="flex items-center justify-between sm:justify-start border border-gray-200 rounded-lg w-full sm:w-auto">
                     <motion.div whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}>
                       <Button 
                         variant="ghost" 
@@ -609,7 +611,7 @@ export default function ProductPage() {
                       key={quantity}
                       initial={{ scale: 0.8 }}
                       animate={{ scale: 1 }}
-                      className="px-6 py-2 font-medium min-w-[4rem] text-center text-lg"
+                      className="px-4 sm:px-6 py-2 font-medium min-w-[3rem] sm:min-w-[4rem] text-center text-lg"
                     >
                       {quantity}
                     </motion.span>
@@ -628,12 +630,12 @@ export default function ProductPage() {
                   <motion.div
                     whileHover={{ scale: 1.05 }}
                     whileTap={{ scale: 0.95 }}
-                    className="flex-1"
+                    className="w-full flex-1"
                   >
                     <Button 
                       onClick={handleAddToCart}
                       disabled={!product.inStock || isAddingToCart}
-                      className="w-full bg-green-600 hover:bg-green-700 h-12 text-lg"
+                      className="w-full bg-green-600 hover:bg-green-700 h-12 text-base sm:text-lg px-4"
                     >
                       {isAddingToCart ? (
                         <div className="flex items-center space-x-2">
@@ -893,6 +895,24 @@ export default function ProductPage() {
               <p className="text-gray-400 leading-relaxed mb-6">
                 Votre partenaire santé de confiance pour une vie plus saine et équilibrée.
               </p>
+              <div className="flex items-center gap-3">
+                <a
+                  href="https://www.facebook.com/Biopharma.parapharmacie"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  aria-label="Facebook BioPharma"
+                  className="w-10 h-10 rounded-full border border-gray-700 text-gray-300 hover:text-white hover:border-green-500 hover:bg-green-600/20 transition-colors flex items-center justify-center"
+                >
+                  <Facebook className="w-5 h-5" />
+                </a>
+                <a
+                  href="mailto:biopharma.tunisie@gmail.com"
+                  aria-label="Email BioPharma"
+                  className="w-10 h-10 rounded-full border border-gray-700 text-gray-300 hover:text-white hover:border-green-500 hover:bg-green-600/20 transition-colors flex items-center justify-center"
+                >
+                  <Mail className="w-5 h-5" />
+                </a>
+              </div>
             </div>
 
             <div>

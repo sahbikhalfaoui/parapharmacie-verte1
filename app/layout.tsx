@@ -7,6 +7,11 @@ import './globals.css'
 
 export const metadata: Metadata = {
   metadataBase: new URL('https://biopharma.tn'),
+  icons: {
+    icon: '/logo-icon_vff.png',
+    shortcut: '/logo-icon_vff.png',
+    apple: '/logo-icon_vff.png',
+  },
   title: {
     default: 'BioPharma - Votre Parapharmacie en Ligne | Produits de Santé & Bien-être',
     template: '%s | BioPharma'
@@ -122,8 +127,9 @@ export default function RootLayout({
   return (
     <html lang="fr">
       <head>
-        <link rel="icon" href="/favicon.ico" sizes="any" />
-        <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+        <link rel="icon" href="/logo-icon_vff.png" type="image/png" />
+        <link rel="shortcut icon" href="/logo-icon_vff.png" type="image/png" />
+        <link rel="apple-touch-icon" href="/logo-icon_vff.png" />
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}

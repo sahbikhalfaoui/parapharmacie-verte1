@@ -4,11 +4,15 @@ import connectToDatabase from '@/lib/mongodb'
 import { User } from '@/lib/models'
 import { generateToken, hashPassword } from '@/lib/auth'
 
-const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID || '775881234717-36l5t936hnf5pj8f7uhjg8hf17dm46h3.apps.googleusercontent.com'
+const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID
 const googleClient = new OAuth2Client(GOOGLE_CLIENT_ID)
 
 export async function POST(request: NextRequest) {
   try {
+    if (!GOOGLE_CLIENT_ID) {
+      return NextResponse.json({ error: 'GOOGLE_CLIENT_ID non configuré' }, { status: 500 })
+    }
+
     const { credential } = await request.json()
 
     if (!credential) {
