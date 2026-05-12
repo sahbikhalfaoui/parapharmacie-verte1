@@ -711,10 +711,6 @@ export const CartSheet: React.FC<CartSheetProps> = ({
               <div className="space-y-3 md:space-y-4 order-2 md:order-1">
                 <h3 className="text-base md:text-lg font-semibold text-gray-900">Informations de Livraison</h3>
                 <form onSubmit={handleSubmitOrder} className="space-y-3 md:space-y-4">
-
-              <div className="space-y-3 md:space-y-4">
-                <h3 className="text-base md:text-lg font-semibold text-gray-900">Informations de Livraison</h3>
-                <form onSubmit={handleSubmitOrder} className="space-y-3 md:space-y-4">
                   <div className="space-y-2">
                     <Label htmlFor="fullName" className="text-xs md:text-sm font-medium text-gray-700">
                       Nom Complet *
