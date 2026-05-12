@@ -373,10 +373,10 @@ export default function ContactPage() {
         <div className="max-w-7xl mx-auto px-4 text-center">
           <p className="text-gray-400 mb-4">© 2026 BioPharma. Tous droits réservés.</p>
           <div className="flex justify-center gap-4">
-            <a href="#" className="text-gray-400 hover:text-white transition-colors">
+            <a href="https://www.facebook.com/Biopharma.parapharmacie" target="_blank" rel="noopener noreferrer" className="text-gray-400 hover:text-white transition-colors">
               <Facebook className="w-5 h-5" />
             </a>
-            <a href="#" className="text-gray-400 hover:text-white transition-colors">
+            <a href="https://www.instagram.com/biopharma_grombalia" target="_blank" rel="noopener noreferrer" className="text-gray-400 hover:text-white transition-colors">
               <Instagram className="w-5 h-5" />
             </a>
             <a href="#" className="text-gray-400 hover:text-white transition-colors">

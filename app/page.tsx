@@ -16,7 +16,8 @@ import {
   Award,
   Heart,
   TrendingUp,
-  Facebook
+  Facebook,
+  Instagram
 } from "lucide-react"
 import HeroSection from "@/components/HeroSection"
 import ProductsSection from "@/components/ProductsSection"
@@ -934,6 +935,15 @@ export default function VitaPharmWebsite() {
                   className="w-10 h-10 rounded-full border border-gray-700 text-gray-300 hover:text-white hover:border-green-500 hover:bg-green-600/20 transition-colors flex items-center justify-center"
                 >
                   <Facebook className="w-5 h-5" />
+                </a>
+                <a
+                  href="https://www.instagram.com/biopharma_grombalia"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  aria-label="Instagram BioPharma"
+                  className="w-10 h-10 rounded-full border border-gray-700 text-gray-300 hover:text-white hover:border-green-500 hover:bg-green-600/20 transition-colors flex items-center justify-center"
+                >
+                  <Instagram className="w-5 h-5" />
                 </a>
                 <a
                   href="mailto:biopharma.tunisie@gmail.com"

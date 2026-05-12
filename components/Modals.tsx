@@ -585,13 +585,13 @@ export const CartSheet: React.FC<CartSheetProps> = ({
   return (
     <div className="fixed inset-0 z-50 bg-black/80">
       <div className="fixed right-0 top-0 h-full w-full max-w-2xl bg-white border-l overflow-y-auto">
-        <div className="p-6">
-          <div className="flex items-center justify-between mb-6">
+        <div className="p-3 md:p-6">
+          <div className="flex items-center justify-between mb-4 md:mb-6">
             <div>
-              <h2 className="text-xl font-bold bg-gradient-to-r from-green-600 to-emerald-600 bg-clip-text text-transparent">
+              <h2 className="text-lg md:text-xl font-bold bg-gradient-to-r from-green-600 to-emerald-600 bg-clip-text text-transparent">
                 {showCheckout ? "Commande" : "Panier"}
               </h2>
-              <p className="text-sm text-gray-600">
+              <p className="text-xs md:text-sm text-gray-600">
                 {!showCheckout && totalItems === 0 ? "Votre panier est vide" : 
                  !showCheckout ? `${totalItems} article${totalItems !== 1 ? 's' : ''} dans votre panier` :
                  "Complétez vos informations de commande"}
@@ -707,9 +707,9 @@ export const CartSheet: React.FC<CartSheetProps> = ({
               )}
             </>
           ) : (
-            <div className="grid md:grid-cols-2 gap-6">
-              <div className="space-y-4">
-                <h3 className="text-lg font-semibold text-gray-900">Résumé de Commande</h3>
+            <div className="grid md:grid-cols-2 gap-3 md:gap-6">
+              <div className="space-y-3 md:space-y-4">
+                <h3 className="text-base md:text-lg font-semibold text-gray-900">Résumé de Commande</h3>
                 <div className="space-y-3">
                   {cartItems.map(item => (
                     <div key={item._id} className="flex items-center space-x-3 p-3 bg-gray-50 rounded-lg border border-gray-200">
@@ -764,9 +764,9 @@ export const CartSheet: React.FC<CartSheetProps> = ({
                 </div>
               </div>
 
-              <div className="space-y-4">
-                <h3 className="text-lg font-semibold text-gray-900">Informations de Livraison</h3>
-                <form onSubmit={handleSubmitOrder} className="space-y-4">
+              <div className="space-y-3 md:space-y-4">
+                <h3 className="text-base md:text-lg font-semibold text-gray-900">Informations de Livraison</h3>
+                <form onSubmit={handleSubmitOrder} className="space-y-3 md:space-y-4">
                   <div className="space-y-2">
                     <Label htmlFor="fullName" className="text-sm font-medium text-gray-700">
                       Nom Complet *
