@@ -708,9 +708,138 @@ export const CartSheet: React.FC<CartSheetProps> = ({
             </>
           ) : (
             <div className="grid md:grid-cols-2 gap-3 md:gap-6">
+              <div className="space-y-3 md:space-y-4 order-2 md:order-1">
+                <h3 className="text-base md:text-lg font-semibold text-gray-900">Informations de Livraison</h3>
+                <form onSubmit={handleSubmitOrder} className="space-y-3 md:space-y-4">
+
               <div className="space-y-3 md:space-y-4">
+                <h3 className="text-base md:text-lg font-semibold text-gray-900">Informations de Livraison</h3>
+                <form onSubmit={handleSubmitOrder} className="space-y-3 md:space-y-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="fullName" className="text-xs md:text-sm font-medium text-gray-700">
+                      Nom Complet *
+                    </Label>
+                    <Input 
+                      id="fullName" 
+                      name="fullName" 
+                      type="text" 
+                      placeholder="Nom complet du destinataire" 
+                      value={orderForm.fullName} 
+                      onChange={handleInputChange} 
+                      className="border-2 border-gray-200 focus:border-green-400 text-sm"
+                      required 
+                    />
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="phone" className="text-xs md:text-sm font-medium text-gray-700">
+                      Numéro de Téléphone *
+                    </Label>
+                    <Input 
+                      id="phone" 
+                      name="phone" 
+                      type="tel" 
+                      placeholder="Numéro de téléphone" 
+                      value={orderForm.phone} 
+                      onChange={handleInputChange} 
+                      className="border-2 border-gray-200 focus:border-green-400 text-sm"
+                      required 
+                    />
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="email" className="text-xs md:text-sm font-medium text-gray-700">
+                      Adresse Email *
+                    </Label>
+                    <Input 
+                      id="email" 
+                      name="email" 
+                      type="email" 
+                      placeholder="Adresse email" 
+                      value={orderForm.email} 
+                      onChange={handleInputChange} 
+                      className="border-2 border-gray-200 focus:border-green-400 text-sm"
+                      required 
+                    />
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="address" className="text-xs md:text-sm font-medium text-gray-700">
+                      Adresse de Livraison *
+                    </Label>
+                    <Input 
+                      id="address" 
+                      name="address" 
+                      type="text" 
+                      placeholder="Adresse complète de livraison" 
+                      value={orderForm.address} 
+                      onChange={handleInputChange} 
+                      className="border-2 border-gray-200 focus:border-green-400 text-sm"
+                      required 
+                    />
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="city" className="text-xs md:text-sm font-medium text-gray-700">
+                      Ville *
+                    </Label>
+                    <Input 
+                      id="city" 
+                      name="city" 
+                      type="text" 
+                      placeholder="Ville" 
+                      value={orderForm.city} 
+                      onChange={handleInputChange} 
+                      className="border-2 border-gray-200 focus:border-green-400 text-sm"
+                      required 
+                    />
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="notes" className="text-xs md:text-sm font-medium text-gray-700">
+                      Notes de Livraison (Optionnel)
+                    </Label>
+                    <Input 
+                      id="notes" 
+                      name="notes" 
+                      type="text" 
+                      placeholder="Instructions spéciales pour la livraison" 
+                      value={orderForm.notes} 
+                      onChange={handleInputChange} 
+                      className="border-2 border-gray-200 focus:border-green-400 text-sm"
+                    />
+                  </div>
+                  
+                  <div className="space-y-2 pt-2 md:pt-4">
+                    <Button 
+                      type="submit" 
+                      className="w-full bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 h-10 md:h-12 font-semibold shadow-lg hover:shadow-xl transition-all text-sm md:text-base" 
+                      disabled={isSubmitting}
+                    >
+                      {isSubmitting ? (
+                        <div className="flex items-center space-x-2">
+                          <div className="w-3 h-3 md:w-4 md:h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                          <span className="text-xs md:text-base">Traitement...</span>
+                        </div>
+                      ) : `Passer Commande - ${finalTotal.toFixed(3)} TND`}
+                    </Button>
+                    
+                    <Button 
+                      type="button" 
+                      variant="outline" 
+                      className="w-full border-2 border-gray-200 hover:bg-gray-50 h-10 md:h-12 font-semibold text-sm md:text-base" 
+                      onClick={resetCheckout} 
+                      disabled={isSubmitting}
+                    >
+                      Retour au Panier
+                    </Button>
+                  </div>
+                </form>
+              </div>
+
+              <div className="space-y-3 md:space-y-4 order-1 md:order-2">
                 <h3 className="text-base md:text-lg font-semibold text-gray-900">Résumé de Commande</h3>
-                <div className="space-y-3">
+                <div className="hidden md:block space-y-3">
                   {cartItems.map(item => (
                     <div key={item._id} className="flex items-center space-x-3 p-3 bg-gray-50 rounded-lg border border-gray-200">
                       <img 
@@ -732,161 +861,36 @@ export const CartSheet: React.FC<CartSheetProps> = ({
                 
                 <div className="space-y-2 pt-4 border-t-2 border-gray-200">
                   <div className="flex justify-between text-gray-700">
-                    <span>Sous-total :</span>
-                    <span className="font-medium">{totalPrice.toFixed(3)} TND</span>
+                    <span className="text-sm">Sous-total :</span>
+                    <span className="font-medium text-sm">{totalPrice.toFixed(3)} TND</span>
                   </div>
                   <div className="flex justify-between text-gray-700">
-                    <span>Livraison :</span>
-                    <span className="font-medium">{deliveryFee === 0 ? 'Gratuit' : `${deliveryFee.toFixed(3)} TND`}</span>
+                    <span className="text-sm">Livraison :</span>
+                    <span className="font-medium text-sm">{deliveryFee === 0 ? 'Gratuit' : `${deliveryFee.toFixed(3)} TND`}</span>
                   </div>
-                  <div className="flex justify-between font-bold text-lg pt-2 border-t-2 border-gray-200">
-                    <span>Total :</span>
-                    <span className="text-green-600">{finalTotal.toFixed(3)} TND</span>
+                  <div className="flex justify-between font-bold pt-2 border-t-2 border-gray-200">
+                    <span className="text-base">Total :</span>
+                    <span className="text-green-600 text-base">{finalTotal.toFixed(3)} TND</span>
                   </div>
                 </div>
 
-                <div className="bg-blue-50 border-2 border-blue-200 rounded-xl p-4">
-                  <h4 className="font-semibold text-blue-800 mb-2 flex items-center space-x-2">
-                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <div className="bg-blue-50 border-2 border-blue-200 rounded-xl p-3 md:p-4">
+                  <h4 className="font-semibold text-blue-800 mb-2 flex items-center space-x-2 text-sm md:text-base">
+                    <svg className="w-4 h-4 md:w-5 md:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" />
                     </svg>
                     <span>Mode de Paiement</span>
                   </h4>
-                  <div className="flex items-center space-x-2 mt-3">
-                    <div className="w-5 h-5 bg-blue-600 rounded-full flex items-center justify-center">
-                      <div className="w-2 h-2 bg-white rounded-full"></div>
+                  <div className="flex items-center space-x-2 mt-2 md:mt-3">
+                    <div className="w-4 h-4 md:w-5 md:h-5 bg-blue-600 rounded-full flex items-center justify-center">
+                      <div className="w-1.5 h-1.5 md:w-2 md:h-2 bg-white rounded-full"></div>
                     </div>
-                    <span className="text-blue-700 font-medium">Paiement à la Livraison</span>
+                    <span className="text-blue-700 font-medium text-sm md:text-base">Paiement à la Livraison</span>
                   </div>
-                  <p className="text-sm text-blue-600 mt-2">
+                  <p className="text-xs md:text-sm text-blue-600 mt-2">
                     Payez lors de la réception de votre commande. Aucun paiement en ligne requis.
                   </p>
                 </div>
-              </div>
-
-              <div className="space-y-3 md:space-y-4">
-                <h3 className="text-base md:text-lg font-semibold text-gray-900">Informations de Livraison</h3>
-                <form onSubmit={handleSubmitOrder} className="space-y-3 md:space-y-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="fullName" className="text-sm font-medium text-gray-700">
-                      Nom Complet *
-                    </Label>
-                    <Input 
-                      id="fullName" 
-                      name="fullName" 
-                      type="text" 
-                      placeholder="Nom complet du destinataire" 
-                      value={orderForm.fullName} 
-                      onChange={handleInputChange} 
-                      className="border-2 border-gray-200 focus:border-green-400"
-                      required 
-                    />
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <Label htmlFor="phone" className="text-sm font-medium text-gray-700">
-                      Numéro de Téléphone *
-                    </Label>
-                    <Input 
-                      id="phone" 
-                      name="phone" 
-                      type="tel" 
-                      placeholder="Numéro de téléphone" 
-                      value={orderForm.phone} 
-                      onChange={handleInputChange} 
-                      className="border-2 border-gray-200 focus:border-green-400"
-                      required 
-                    />
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <Label htmlFor="email" className="text-sm font-medium text-gray-700">
-                      Adresse Email *
-                    </Label>
-                    <Input 
-                      id="email" 
-                      name="email" 
-                      type="email" 
-                      placeholder="Adresse email" 
-                      value={orderForm.email} 
-                      onChange={handleInputChange} 
-                      className="border-2 border-gray-200 focus:border-green-400"
-                      required 
-                    />
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <Label htmlFor="address" className="text-sm font-medium text-gray-700">
-                      Adresse de Livraison *
-                    </Label>
-                    <Input 
-                      id="address" 
-                      name="address" 
-                      type="text" 
-                      placeholder="Adresse complète de livraison" 
-                      value={orderForm.address} 
-                      onChange={handleInputChange} 
-                      className="border-2 border-gray-200 focus:border-green-400"
-                      required 
-                    />
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <Label htmlFor="city" className="text-sm font-medium text-gray-700">
-                      Ville *
-                    </Label>
-                    <Input 
-                      id="city" 
-                      name="city" 
-                      type="text" 
-                      placeholder="Ville" 
-                      value={orderForm.city} 
-                      onChange={handleInputChange} 
-                      className="border-2 border-gray-200 focus:border-green-400"
-                      required 
-                    />
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <Label htmlFor="notes" className="text-sm font-medium text-gray-700">
-                      Notes de Livraison (Optionnel)
-                    </Label>
-                    <Input 
-                      id="notes" 
-                      name="notes" 
-                      type="text" 
-                      placeholder="Instructions spéciales pour la livraison" 
-                      value={orderForm.notes} 
-                      onChange={handleInputChange} 
-                      className="border-2 border-gray-200 focus:border-green-400"
-                    />
-                  </div>
-                  
-                  <div className="space-y-2 pt-4">
-                    <Button 
-                      type="submit" 
-                      className="w-full bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 h-12 font-semibold shadow-lg hover:shadow-xl transition-all" 
-                      disabled={isSubmitting}
-                    >
-                      {isSubmitting ? (
-                        <div className="flex items-center space-x-2">
-                          <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                          <span>Traitement...</span>
-                        </div>
-                      ) : `Passer Commande - ${finalTotal.toFixed(3)} TND`}
-                    </Button>
-                    
-                    <Button 
-                      type="button" 
-                      variant="outline" 
-                      className="w-full border-2 border-gray-200 hover:bg-gray-50" 
-                      onClick={resetCheckout} 
-                      disabled={isSubmitting}
-                    >
-                      Retour au Panier
-                    </Button>
-                  </div>
-                </form>
               </div>
             </div>
           )}
