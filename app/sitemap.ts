@@ -3,7 +3,7 @@ import connectToDatabase from '@/lib/mongodb'
 import { Product, Category } from '@/lib/models'
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const baseUrl = 'https://biopharma.tn'
+  const baseUrl = 'https://biopharmapara.tn'
 
   // Static pages
   const staticPages: MetadataRoute.Sitemap = [

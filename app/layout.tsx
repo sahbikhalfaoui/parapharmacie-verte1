@@ -6,7 +6,7 @@ import AnalyticsTracker from '@/components/Analytics'
 import './globals.css'
 
 export const metadata: Metadata = {
-  metadataBase: new URL('https://biopharma.tn'),
+  metadataBase: new URL('https://biopharmapara.tn'),
   icons: {
     icon: '/logo-icon_vff.png',
     shortcut: '/logo-icon_vff.png',
@@ -29,7 +29,7 @@ export const metadata: Metadata = {
   openGraph: {
     type: 'website',
     locale: 'fr_TN',
-    url: 'https://biopharma.tn',
+    url: 'https://biopharmapara.tn',
     title: 'BioPharma - Votre Parapharmacie en Ligne',
     description: 'Votre partenaire santé de confiance. Produits pharmaceutiques de qualité, livraison rapide en Tunisie.',
     siteName: 'BioPharma',
@@ -61,7 +61,7 @@ export const metadata: Metadata = {
   },
   manifest: '/manifest.json',
   alternates: {
-    canonical: 'https://biopharma.tn',
+    canonical: 'https://biopharmapara.tn',
   },
 }
 
@@ -83,12 +83,12 @@ export default function RootLayout({
     '@graph': [
       {
         '@type': 'Organization',
-        '@id': 'https://biopharma.tn/#organization',
+        '@id': 'https://biopharmapara.tn/#organization',
         name: 'BioPharma',
-        url: 'https://biopharma.tn',
+        url: 'https://biopharmapara.tn',
         logo: {
           '@type': 'ImageObject',
-          url: 'https://biopharma.tn/logo-icon_vff.png',
+          url: 'https://biopharmapara.tn/logo-icon_vff.png',
         },
         description: 'Votre parapharmacie en ligne de confiance en Tunisie. Produits pharmaceutiques, compléments alimentaires et cosmétiques.',
         address: {
@@ -99,26 +99,26 @@ export default function RootLayout({
       },
       {
         '@type': 'WebSite',
-        '@id': 'https://biopharma.tn/#website',
-        url: 'https://biopharma.tn',
+        '@id': 'https://biopharmapara.tn/#website',
+        url: 'https://biopharmapara.tn',
         name: 'BioPharma',
-        publisher: { '@id': 'https://biopharma.tn/#organization' },
+        publisher: { '@id': 'https://biopharmapara.tn/#organization' },
         potentialAction: {
           '@type': 'SearchAction',
           target: {
             '@type': 'EntryPoint',
-            urlTemplate: 'https://biopharma.tn/?search={search_term_string}',
+            urlTemplate: 'https://biopharmapara.tn/?search={search_term_string}',
           },
           'query-input': 'required name=search_term_string',
         },
       },
       {
         '@type': 'WebPage',
-        '@id': 'https://biopharma.tn/#webpage',
-        url: 'https://biopharma.tn',
+        '@id': 'https://biopharmapara.tn/#webpage',
+        url: 'https://biopharmapara.tn',
         name: 'BioPharma - Votre Parapharmacie en Ligne',
-        isPartOf: { '@id': 'https://biopharma.tn/#website' },
-        about: { '@id': 'https://biopharma.tn/#organization' },
+        isPartOf: { '@id': 'https://biopharmapara.tn/#website' },
+        about: { '@id': 'https://biopharmapara.tn/#organization' },
         description: 'Découvrez nos produits pharmaceutiques, compléments alimentaires, cosmétiques et soins. Livraison rapide en Tunisie.',
       },
     ],
