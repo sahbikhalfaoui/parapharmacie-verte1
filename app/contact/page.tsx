@@ -104,7 +104,6 @@ export default function ContactPage() {
     <div className="min-h-screen bg-gradient-to-br from-green-50 via-white to-emerald-50">
       <Navbar 
         categories={[]} 
-        onSearch={() => {}} 
         user={user} 
         onAuthClick={() => {}} 
         onCartClick={() => {}}

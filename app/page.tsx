@@ -275,7 +275,7 @@ export default function VitaPharmWebsite() {
       
       setProducts(transformedProducts)
       
-      const brands = [...new Set(transformedProducts.map((product: any) => product.brand))].sort()
+      const brands = [...new Set(transformedProducts.map((product: any) => product.brand))].sort() as string[]
       setAvailableBrands(brands)
       
       const maxPrice = Math.max(...transformedProducts.map((product: any) => product.price))
@@ -653,7 +653,7 @@ export default function VitaPharmWebsite() {
       />
       
       <HeroSection 
-        onAddToCart={addToCart}
+        onAddToCart={(product: any) => addToCart(product as Product)}
         onProductClick={handleProductClick}
       />
 

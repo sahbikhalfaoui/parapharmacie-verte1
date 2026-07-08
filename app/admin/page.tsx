@@ -18,7 +18,10 @@ import {
   TrashIcon, 
   EyeIcon, 
   LogOutIcon,
-  ImageIcon
+  ImageIcon,
+  SearchIcon,
+  ChevronLeftIcon,
+  ChevronRightIcon
 } from "./components/icons"
 import { AuthCheck } from "./components/auth-check"
 import { ConfirmModal } from "./components/confirm-modal"
@@ -54,6 +57,11 @@ export default function AdminDashboard() {
   const [currentUser, setCurrentUser] = useState<User | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   
+  const [productSearchQuery, setProductSearchQuery] = useState('')
+  const [productCategoryFilter, setProductCategoryFilter] = useState('all')
+  const [productCurrentPage, setProductCurrentPage] = useState(1)
+  const productsPerPage = 10
+
   const [productModal, setProductModal] = useState<ModalState>({ isOpen: false, product: null })
   const [categoryModal, setCategoryModal] = useState<ModalState>({ isOpen: false, category: null, type: 'category' })
   const [confirmModal, setConfirmModal] = useState<ConfirmModalState>({ 
@@ -606,34 +614,78 @@ export default function AdminDashboard() {
     </div>
   )
 
-  const renderProducts = () => (
-    <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <h2 className="text-2xl font-bold">Gestion des Produits ({products.length})</h2>
-        <Button onClick={() => setProductModal({ isOpen: true, product: null })}>
-          <PlusIcon className="h-4 w-4 mr-2" />
-          Nouveau Produit
-        </Button>
-      </div>
+  const renderProducts = () => {
+    const filteredProducts = products.filter(product => {
+      const matchesSearch = product.name.toLowerCase().includes(productSearchQuery.toLowerCase()) || 
+                            (product.description && product.description.toLowerCase().includes(productSearchQuery.toLowerCase()));
+      const categoryId = typeof product.category === 'object' ? product.category._id : product.category;
+      const matchesCategory = productCategoryFilter === 'all' || categoryId === productCategoryFilter;
+      return matchesSearch && matchesCategory;
+    });
 
-      <Card>
-        <CardContent className="p-0">
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead className="bg-muted/50">
-                <tr>
-                  <th className="text-left p-4">Image</th>
-                  <th className="text-left p-4">Produit</th>
-                  <th className="text-left p-4">Catégorie</th>
-                  <th className="text-left p-4">Prix</th>
-                  <th className="text-left p-4">Stock</th>
-                  <th className="text-left p-4">Statut</th>
-                  <th className="text-left p-4">Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {products.map((product) => (
-                  <tr key={product._id} className="border-b">
+    const totalPages = Math.ceil(filteredProducts.length / productsPerPage) || 1;
+    const paginatedProducts = filteredProducts.slice(
+      (productCurrentPage - 1) * productsPerPage,
+      productCurrentPage * productsPerPage
+    );
+
+    return (
+      <div className="space-y-6">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+          <h2 className="text-2xl font-bold">Gestion des Produits ({filteredProducts.length})</h2>
+          <Button onClick={() => setProductModal({ isOpen: true, product: null })}>
+            <PlusIcon className="h-4 w-4 mr-2" />
+            Nouveau Produit
+          </Button>
+        </div>
+
+        <div className="flex flex-col sm:flex-row gap-4">
+          <div className="relative flex-1">
+            <SearchIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <input
+              type="text"
+              placeholder="Rechercher un produit..."
+              value={productSearchQuery}
+              onChange={(e) => {
+                setProductSearchQuery(e.target.value)
+                setProductCurrentPage(1)
+              }}
+              className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 pl-10"
+            />
+          </div>
+          <select
+            value={productCategoryFilter}
+            onChange={(e) => {
+              setProductCategoryFilter(e.target.value)
+              setProductCurrentPage(1)
+            }}
+            className="flex h-10 w-full sm:w-[200px] rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            <option value="all">Toutes les catégories</option>
+            {categories.map(c => (
+              <option key={c._id} value={c._id}>{c.name}</option>
+            ))}
+          </select>
+        </div>
+
+        <Card>
+          <CardContent className="p-0">
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead className="bg-muted/50">
+                  <tr>
+                    <th className="text-left p-4">Image</th>
+                    <th className="text-left p-4">Produit</th>
+                    <th className="text-left p-4">Catégorie</th>
+                    <th className="text-left p-4">Prix</th>
+                    <th className="text-left p-4">Stock</th>
+                    <th className="text-left p-4">Statut</th>
+                    <th className="text-left p-4">Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {paginatedProducts.map((product) => (
+                    <tr key={product._id} className="border-b">
                     <td className="p-4">
                       {product.image ? (
                         <img 
@@ -717,7 +769,7 @@ export default function AdminDashboard() {
                     </td>
                   </tr>
                 ))}
-                {products.length === 0 && (
+                {paginatedProducts.length === 0 && (
                   <tr>
                     <td colSpan={7} className="p-8 text-center text-muted-foreground">
                       Aucun produit trouvé
@@ -727,10 +779,40 @@ export default function AdminDashboard() {
               </tbody>
             </table>
           </div>
+
+          {totalPages > 1 && (
+            <div className="flex items-center justify-between p-4 border-t">
+              <div className="text-sm text-muted-foreground">
+                Affichage de {((productCurrentPage - 1) * productsPerPage) + 1} à {Math.min(productCurrentPage * productsPerPage, filteredProducts.length)} sur {filteredProducts.length} produits
+              </div>
+              <div className="flex items-center space-x-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setProductCurrentPage(p => Math.max(1, p - 1))}
+                  disabled={productCurrentPage === 1}
+                >
+                  <ChevronLeftIcon className="h-4 w-4" />
+                </Button>
+                <div className="text-sm font-medium">
+                  Page {productCurrentPage} sur {totalPages}
+                </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setProductCurrentPage(p => Math.min(totalPages, p + 1))}
+                  disabled={productCurrentPage === totalPages}
+                >
+                  <ChevronRightIcon className="h-4 w-4" />
+                </Button>
+              </div>
+            </div>
+          )}
         </CardContent>
       </Card>
     </div>
   )
+}
 
   const renderCategories = () => (
     <div className="space-y-6">
