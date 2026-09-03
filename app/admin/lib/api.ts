@@ -46,8 +46,8 @@ export const apiRequest = async <T>(endpoint: string, options: RequestInit = {})
   console.log('API Request:', endpoint)
   console.log('Token available:', token ? 'Yes' : 'No')
   
-  const headers: HeadersInit = {
-    ...options.headers
+  const headers: Record<string, string> = {
+    ...(options.headers as Record<string, string>)
   }
 
   if (token) {
@@ -95,7 +95,7 @@ export const apiRequest = async <T>(endpoint: string, options: RequestInit = {})
     console.error('API Request failed:', error)
     
     // Only show alert for network errors, not auth errors
-    if (error instanceof Error && error.message.includes('Network') || error.message.includes('Failed to fetch')) {
+    if ((error instanceof Error && error.message.includes('Network')) || (error instanceof Error && error.message.includes('Failed to fetch'))) {
       alert('Erreur de connexion au serveur. Veuillez réessayer.')
     }
     

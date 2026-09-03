@@ -161,7 +161,7 @@ export const SearchCommand: React.FC<SearchCommandProps> = ({
 
   const loadPopularProducts = async () => {
     try {
-      const res = await fetch('/api/products?limit=6&sortBy=rating&sortOrder=desc')
+      const res = await fetch('/api/products?limit=6&sortBy=averageRating&sortOrder=desc')
       if (res.ok) {
         const data = await res.json()
         const products = (data.products || []).slice(0, 6).map((p: any) => ({
@@ -449,10 +449,10 @@ export const SearchCommand: React.FC<SearchCommandProps> = ({
                               >
                                 <div className="w-12 h-12 rounded-lg bg-gray-100 overflow-hidden flex-shrink-0">
                                   <img
-                                    src={product.image || "/placeholder-product.jpg"}
+                                    src={product.image || "/placeholder.jpg"}
                                     alt={product.name}
                                     className="w-full h-full object-cover group-hover:scale-110 transition-transform"
-                                    onError={(e) => { e.currentTarget.src = "/placeholder-product.jpg" }}
+                                    onError={(e) => { e.currentTarget.src = "/placeholder.jpg" }}
                                   />
                                 </div>
                                 <div className="flex-1 min-w-0">
@@ -512,10 +512,10 @@ export const SearchCommand: React.FC<SearchCommandProps> = ({
                                     </Badge>
                                   )}
                                   <img
-                                    src={product.image || "/placeholder-product.jpg"}
+                                      src={product.image || "/placeholder.jpg"}
                                     alt={product.name}
                                     className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
-                                    onError={(e) => { e.currentTarget.src = "/placeholder-product.jpg" }}
+                                    onError={(e) => { e.currentTarget.src = "/placeholder.jpg" }}
                                   />
                                 </div>
                                 <div className="flex-1 min-w-0">

@@ -24,7 +24,7 @@ interface Product {
   price: number
   image?: string
   categoryName?: string
-  quantity: number
+  quantity?: number
 }
 
 interface AuthModalProps {
@@ -521,8 +521,8 @@ export const CartSheet: React.FC<CartSheetProps> = ({
   })
   const [isSubmitting, setIsSubmitting] = useState(false)
 
-  const totalItems = cartItems.reduce((sum, item) => sum + item.quantity, 0)
-  const totalPrice = cartItems.reduce((sum, item) => sum + (parseFloat(item.price.toString()) * item.quantity), 0)
+  const totalItems = cartItems.reduce((sum, item) => sum + (item.quantity || 0), 0)
+  const totalPrice = cartItems.reduce((sum, item) => sum + (parseFloat(item.price.toString()) * (item.quantity || 0)), 0)
   const deliveryFee = totalPrice > 150 ? 0 : 15
   const finalTotal = totalPrice + deliveryFee
 
@@ -542,7 +542,7 @@ export const CartSheet: React.FC<CartSheetProps> = ({
           product: item._id,
           name: item.name,
           price: item.price,
-          quantity: item.quantity
+          quantity: item.quantity || 1
         })),
         customerInfo: orderForm,
         totalPrice,
@@ -643,15 +643,15 @@ export const CartSheet: React.FC<CartSheetProps> = ({
                             </button>
                             <div className="flex items-center border-2 border-gray-200 rounded-lg">
                               <button 
-                                onClick={() => updateQuantity(item._id, Math.max(1, item.quantity - 1))} 
+                                onClick={() => updateQuantity(item._id, Math.max(1, (item.quantity || 1) - 1))} 
                                 className="p-2 hover:bg-gray-100 transition-colors" 
-                                disabled={item.quantity <= 1}
+                                disabled={(item.quantity || 1) <= 1}
                               >
                                 <MinusIcon className="h-3 w-3" />
                               </button>
-                              <span className="px-3 py-1 text-sm font-semibold min-w-[2rem] text-center">{item.quantity}</span>
+                              <span className="px-3 py-1 text-sm font-semibold min-w-[2rem] text-center">{item.quantity || 1}</span>
                               <button 
-                                onClick={() => updateQuantity(item._id, item.quantity + 1)} 
+                                onClick={() => updateQuantity(item._id, (item.quantity || 1) + 1)} 
                                 className="p-2 hover:bg-gray-100 transition-colors"
                               >
                                 <PlusIcon className="h-3 w-3" />
@@ -848,7 +848,7 @@ export const CartSheet: React.FC<CartSheetProps> = ({
                       />
                       <div className="flex-1 min-w-0">
                         <p className="font-medium text-sm truncate text-gray-900">{item.name}</p>
-                        <p className="text-xs text-gray-600">Qté : {item.quantity}</p>
+                        <p className="text-xs text-gray-600">Qté : {item.quantity || 1}</p>
                       </div>
                       <p className="font-semibold text-sm text-green-600">{item.price} TND</p>
                     </div>

@@ -103,11 +103,12 @@ export default function ContactPage() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-green-50 via-white to-emerald-50">
       <Navbar 
-        categories={[]} 
         user={user} 
-        onAuthClick={() => {}} 
-        onCartClick={() => {}}
+        onAuthModalOpen={() => {}} 
+        onCartOpen={() => {}}
         cartCount={0}
+        onLogout={() => {}}
+        onAdminRedirect={() => {}}
       />
 
       {/* Hero Section */}

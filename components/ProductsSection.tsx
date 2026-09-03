@@ -27,13 +27,19 @@ interface Product {
   image?: string
   categoryName?: string
   subcategoryName?: string
+  quantity?: number
   description?: string
+  rating?: number
+  reviews?: number
   inStock?: boolean
   badge?: string
   originalPrice?: number
   averageRating?: number
   totalReviews?: number
   subCategory?: { _id: string; name: string } | string
+  category?: { name: string }
+  subcategory?: { name: string }
+  brand?: string
 }
 
 interface Review {
@@ -619,7 +625,8 @@ const ProductsSection: React.FC<ProductsSectionProps> = ({
         }
         return p.subcategoryName
       })
-      .filter((v, i, a) => v && v !== 'Aucune' && v !== 'Tous' && v !== 'undefined' && a.indexOf(v) === i)
+      .filter((v): v is string => typeof v === 'string' && v !== 'Aucune' && v !== 'Tous' && v !== 'undefined')
+      .filter((v, i, a) => a.indexOf(v) === i)
     
     return subs
   }

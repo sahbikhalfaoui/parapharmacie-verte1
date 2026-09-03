@@ -44,12 +44,16 @@ export interface OrderItem {
   product: string | Product;
   quantity: number;
   price: number;
+  name?: string;
 }
 
 export interface CustomerInfo {
   fullName: string;
   email: string;
-  phone?: string;
+  phone: string;
+  address: string;
+  city: string;
+  notes?: string;
 }
 
 export interface Order {
@@ -57,8 +61,11 @@ export interface Order {
   orderNumber?: string;
   customerInfo: CustomerInfo;
   items: OrderItem[];
+  totalPrice: number;
+  deliveryFee: number;
   total: number;
   finalTotal: number;
+  paymentMethod?: string;
   status: 'pending' | 'confirmed' | 'preparing' | 'shipped' | 'delivered' | 'cancelled';
   createdAt: string;
 }

@@ -110,8 +110,12 @@ export const ProductModal: React.FC<ProductModalProps> = ({
         }
       })
 
-      selectedImages.forEach((image) => {
-        formDataToSend.append('images', image)
+      selectedImages.forEach((file, index) => {
+        if (index === 0) {
+          formDataToSend.append('image', file)
+        } else {
+          formDataToSend.append(`gallery_${index - 1}`, file)
+        }
       })
 
       const endpoint = product ? `/products/${product._id}` : '/products'

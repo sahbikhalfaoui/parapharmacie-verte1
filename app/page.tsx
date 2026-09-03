@@ -42,7 +42,7 @@ interface Product {
   image?: string
   categoryName?: string
   subcategoryName?: string
-  quantity: number
+  quantity?: number
   description?: string
   rating?: number
   reviews?: number
@@ -65,7 +65,8 @@ interface Category {
 interface Subcategory {
   _id: string
   name: string
-  categoryId: string
+  category: string
+  categoryId?: string
 }
 
 interface NavbarProduct {
@@ -466,7 +467,7 @@ export default function VitaPharmWebsite() {
         newItems = prevItems.map(item =>
           item._id === product._id ? { 
             ...item, 
-            quantity: item.quantity + quantity 
+            quantity: (item.quantity || 0) + quantity 
           } : item
         )
       } else {
@@ -586,7 +587,7 @@ export default function VitaPharmWebsite() {
     }, 100)
   }
 
-  const cartCount = cartItems.reduce((sum, item) => sum + item.quantity, 0)
+  const cartCount = cartItems.reduce((sum, item) => sum + (item.quantity || 0), 0)
 
   // Loading Screen Component
   if (showLoading) {

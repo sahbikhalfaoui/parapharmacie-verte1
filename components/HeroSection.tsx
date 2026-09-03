@@ -227,11 +227,10 @@ const HeroSection: React.FC<HeroSectionProps> = ({ onAddToCart, onProductClick }
       {/* Hero Carousel Section */}
       <section 
         id="accueil" 
-        className="relative w-full py-8 px-4 sm:px-6 lg:px-8 bg-gradient-to-b from-gray-50 to-white"
+        className="relative w-full bg-gradient-to-b from-gray-50 to-white"
       >
-        <div className="max-w-6xl mx-auto">
           <div
-            className="relative h-[400px] sm:h-[450px] rounded-2xl overflow-hidden shadow-2xl group"
+            className="relative h-[400px] sm:h-[500px] overflow-hidden group"
             onMouseEnter={() => setIsAutoPlaying(false)}
             onMouseLeave={() => setIsAutoPlaying(true)}
           >
@@ -350,29 +349,30 @@ const HeroSection: React.FC<HeroSectionProps> = ({ onAddToCart, onProductClick }
             </div>
           </div>
 
-          <div className="flex gap-3 mt-6 justify-center">
-            {banners.map((banner, index) => (
-              <button
-                key={index}
-                onClick={() => scrollToSlide(index)}
-                className={`relative w-20 h-14 rounded-lg overflow-hidden transition-all transform hover:scale-105 ${
-                  currentSlide === index 
-                    ? 'ring-4 ring-green-500 scale-105' 
-                    : 'ring-2 ring-gray-300 opacity-60 hover:opacity-100'
-                }`}
-              >
-                <img 
-                  src={banner.image} 
-                  alt={`Thumbnail ${index + 1}`}
-                  className="w-full h-full object-cover"
-                />
-                {currentSlide === index && (
-                  <div className="absolute inset-0 bg-green-500/20"></div>
-                )}
-              </button>
-            ))}
+          <div className="max-w-6xl mx-auto px-4">
+            <div className="flex gap-3 mt-6 justify-center">
+              {banners.map((banner, index) => (
+                <button
+                  key={index}
+                  onClick={() => scrollToSlide(index)}
+                  className={`relative w-20 h-14 rounded-lg overflow-hidden transition-all transform hover:scale-105 ${
+                    currentSlide === index 
+                      ? 'ring-4 ring-green-500 scale-105' 
+                      : 'ring-2 ring-gray-300 opacity-60 hover:opacity-100'
+                  }`}
+                >
+                  <img 
+                    src={banner.image} 
+                    alt={`Thumbnail ${index + 1}`}
+                    className="w-full h-full object-cover"
+                  />
+                  {currentSlide === index && (
+                    <div className="absolute inset-0 bg-green-500/20"></div>
+                  )}
+                </button>
+              ))}
+            </div>
           </div>
-        </div>
 
         <style jsx>{`
           .scrollbar-hide::-webkit-scrollbar {
@@ -392,15 +392,15 @@ const HeroSection: React.FC<HeroSectionProps> = ({ onAddToCart, onProductClick }
         {/* Parallax Background Layers */}
         <motion.div 
           style={{ y: smoothY1, opacity }}
-          className="absolute top-0 left-0 w-96 h-96 bg-gradient-to-br from-green-300/40 to-emerald-300/40 rounded-full blur-3xl"
+          className="absolute top-0 left-0 w-[80vw] h-[80vw] sm:w-96 sm:h-96 bg-gradient-to-br from-green-300/40 to-emerald-300/40 rounded-full blur-3xl pointer-events-none"
         />
         <motion.div 
           style={{ y: smoothY2, opacity }}
-          className="absolute bottom-0 right-0 w-96 h-96 bg-gradient-to-br from-emerald-300/40 to-teal-300/40 rounded-full blur-3xl"
+          className="absolute bottom-0 right-0 w-[80vw] h-[80vw] sm:w-96 sm:h-96 bg-gradient-to-br from-emerald-300/40 to-teal-300/40 rounded-full blur-3xl pointer-events-none"
         />
         <motion.div 
           style={{ y: smoothY3, scale }}
-          className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-gradient-to-br from-teal-200/30 to-green-200/30 rounded-full blur-3xl"
+          className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[120vw] h-[120vw] sm:w-[600px] sm:h-[600px] bg-gradient-to-br from-teal-200/30 to-green-200/30 rounded-full blur-3xl pointer-events-none"
         />
 
         {/* Floating Particles */}

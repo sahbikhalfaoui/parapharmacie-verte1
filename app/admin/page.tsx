@@ -70,6 +70,8 @@ export default function AdminDashboard() {
     message: '', 
     onConfirm: null 
   })
+  const [selectedOrder, setSelectedOrder] = useState<Order | null>(null)
+  const [statusSaving, setStatusSaving] = useState<Record<string, boolean>>({})
 
   useEffect(() => {
     checkAuthentication()
@@ -182,7 +184,7 @@ export default function AdminDashboard() {
 
   const loadProducts = async () => {
     try {
-      const response = await apiRequest<{ products: Product[] } | Product[]>('/products?limit=100')
+      const response = await apiRequest<{ products: Product[] } | Product[]>('/products?limit=500')
       console.log('Products loaded:', response)
       
       // Handle both response formats
@@ -260,15 +262,20 @@ export default function AdminDashboard() {
   }
 
   const handleStatusChange = async (orderId: string, newStatus: Order['status']) => {
+    setStatusSaving(prev => ({ ...prev, [orderId]: true }))
     try {
       await apiRequest(`/admin/orders/${orderId}/status`, {
         method: 'PATCH',
         body: JSON.stringify({ status: newStatus })
       })
       await loadOrders()
+      // Update selectedOrder if it's open
+      setSelectedOrder(prev => prev?._id === orderId ? { ...prev, status: newStatus } : prev)
     } catch (error) {
       console.error('Error updating order status:', error)
       alert('Erreur lors de la mise à jour du statut: ' + (error instanceof Error ? error.message : 'Unknown error'))
+    } finally {
+      setStatusSaving(prev => ({ ...prev, [orderId]: false }))
     }
   }
 
@@ -963,6 +970,109 @@ export default function AdminDashboard() {
     <div className="space-y-6">
       <h2 className="text-2xl font-bold">Gestion des Commandes ({orders.length})</h2>
 
+      {/* Order Detail Modal */}
+      {selectedOrder && (
+        <div className="fixed inset-0 z-50 bg-black/60 flex items-center justify-center p-4" onClick={() => setSelectedOrder(null)}>
+          <div
+            className="bg-white rounded-xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto"
+            onClick={e => e.stopPropagation()}
+          >
+            {/* Modal Header */}
+            <div className="flex items-center justify-between p-5 border-b">
+              <div>
+                <h3 className="text-lg font-bold">Commande #{selectedOrder.orderNumber || selectedOrder._id.slice(-6)}</h3>
+                <p className="text-sm text-muted-foreground">{formatDate(selectedOrder.createdAt)}</p>
+              </div>
+              <button
+                onClick={() => setSelectedOrder(null)}
+                className="text-gray-400 hover:text-gray-600 text-xl font-bold leading-none"
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="p-5 space-y-5">
+              {/* Status */}
+              <div className="flex items-center gap-3">
+                <span className="text-sm font-medium text-gray-700">Statut :</span>
+                <select
+                  value={selectedOrder.status}
+                  onChange={(e) => handleStatusChange(selectedOrder._id, e.target.value as Order['status'])}
+                  disabled={statusSaving[selectedOrder._id]}
+                  className="text-sm border rounded px-3 py-1.5 disabled:opacity-50"
+                >
+                  <option value="pending">En Attente</option>
+                  <option value="confirmed">Confirmée</option>
+                  <option value="preparing">Préparation</option>
+                  <option value="shipped">Expédiée</option>
+                  <option value="delivered">Livrée</option>
+                  <option value="cancelled">Annulée</option>
+                </select>
+                {statusSaving[selectedOrder._id] && (
+                  <span className="text-xs text-blue-600 animate-pulse">Enregistrement…</span>
+                )}
+              </div>
+
+              {/* Customer Info */}
+              <div className="bg-gray-50 rounded-lg p-4">
+                <h4 className="font-semibold text-sm text-gray-700 mb-3">Informations Client</h4>
+                <div className="grid grid-cols-2 gap-2 text-sm">
+                  <div><span className="text-gray-500">Nom :</span> <span className="font-medium">{selectedOrder.customerInfo?.fullName}</span></div>
+                  <div><span className="text-gray-500">Téléphone :</span> <span className="font-medium">{selectedOrder.customerInfo?.phone}</span></div>
+                  <div><span className="text-gray-500">Email :</span> <span className="font-medium">{selectedOrder.customerInfo?.email}</span></div>
+                  <div><span className="text-gray-500">Ville :</span> <span className="font-medium">{selectedOrder.customerInfo?.city}</span></div>
+                  <div className="col-span-2"><span className="text-gray-500">Adresse :</span> <span className="font-medium">{selectedOrder.customerInfo?.address}</span></div>
+                  {selectedOrder.customerInfo?.notes && (
+                    <div className="col-span-2"><span className="text-gray-500">Notes :</span> <span className="font-medium italic">{selectedOrder.customerInfo.notes}</span></div>
+                  )}
+                </div>
+              </div>
+
+              {/* Items */}
+              <div>
+                <h4 className="font-semibold text-sm text-gray-700 mb-3">Articles commandés</h4>
+                <div className="border rounded-lg overflow-hidden">
+                  <table className="w-full text-sm">
+                    <thead className="bg-gray-50 text-gray-600">
+                      <tr>
+                        <th className="text-left p-3">Produit</th>
+                        <th className="text-center p-3">Qté</th>
+                        <th className="text-right p-3">Prix unit.</th>
+                        <th className="text-right p-3">Sous-total</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {selectedOrder.items?.map((item, i) => {
+                        const productName = item.name || (typeof item.product === 'object' ? (item.product as any)?.name : null) || 'Produit'
+                        const unitPrice = typeof item.price === 'number' ? item.price : parseFloat(String(item.price)) || 0
+                        return (
+                          <tr key={i} className="border-t">
+                            <td className="p-3 font-medium">{productName}</td>
+                            <td className="p-3 text-center">{item.quantity}</td>
+                            <td className="p-3 text-right">{unitPrice.toFixed(3)} TND</td>
+                            <td className="p-3 text-right font-semibold">{(unitPrice * item.quantity).toFixed(3)} TND</td>
+                          </tr>
+                        )
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+              {/* Totals */}
+              <div className="bg-gray-50 rounded-lg p-4 space-y-2 text-sm">
+                <div className="flex justify-between"><span className="text-gray-600">Sous-total</span><span>{(selectedOrder.totalPrice || 0).toFixed(3)} TND</span></div>
+                <div className="flex justify-between"><span className="text-gray-600">Frais de livraison</span><span>{(selectedOrder.deliveryFee || 0).toFixed(3)} TND</span></div>
+                <div className="flex justify-between font-bold text-base border-t pt-2"><span>Total</span><span className="text-green-700">{(selectedOrder.finalTotal || 0).toFixed(3)} TND</span></div>
+                {selectedOrder.paymentMethod && (
+                  <div className="flex justify-between text-gray-500 text-xs"><span>Paiement</span><span>{selectedOrder.paymentMethod}</span></div>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       <Card>
         <CardContent className="p-0">
           <div className="overflow-x-auto">
@@ -975,47 +1085,64 @@ export default function AdminDashboard() {
                   <th className="text-left p-4">Total</th>
                   <th className="text-left p-4">Statut</th>
                   <th className="text-left p-4">Date</th>
-                  <th className="text-left p-4">Actions</th>
+                  <th className="text-left p-4">Détails</th>
                 </tr>
               </thead>
               <tbody>
                 {orders.map((order) => (
-                  <tr key={order._id} className="border-b">
+                  <tr key={order._id} className="border-b hover:bg-muted/20 transition-colors">
                     <td className="p-4">
                       <p className="font-mono text-sm">{order.orderNumber || `CMD-${order._id.slice(-6)}`}</p>
                     </td>
                     <td className="p-4">
                       <div>
                         <p className="font-semibold">{order.customerInfo?.fullName || 'Client anonyme'}</p>
-                        <p className="text-sm text-muted-foreground">{order.customerInfo?.email}</p>
                         <p className="text-sm text-muted-foreground">{order.customerInfo?.phone}</p>
                       </div>
                     </td>
-                    <td className="p-4">
-                      <Badge variant="secondary">{order.items?.length || 0} articles</Badge>
+                    <td className="p-4 max-w-[200px]">
+                      <div className="space-y-0.5">
+                        {order.items?.slice(0, 3).map((item, i) => {
+                          const name = item.name || (typeof item.product === 'object' ? (item.product as any)?.name : null) || 'Produit'
+                          return (
+                            <p key={i} className="text-xs text-gray-700 truncate">
+                              {item.quantity}× {name}
+                            </p>
+                          )
+                        })}
+                        {(order.items?.length || 0) > 3 && (
+                          <p className="text-xs text-muted-foreground">+{order.items.length - 3} autre(s)</p>
+                        )}
+                      </div>
                     </td>
                     <td className="p-4">
                       <p className="font-semibold text-primary">{(order.finalTotal || 0).toFixed(3)} TND</p>
                     </td>
                     <td className="p-4">
-                      <select
-                        value={order.status}
-                        onChange={(e) => handleStatusChange(order._id, e.target.value as Order['status'])}
-                        className="text-sm border rounded px-2 py-1"
-                      >
-                        <option value="pending">En Attente</option>
-                        <option value="confirmed">Confirmée</option>
-                        <option value="preparing">Préparation</option>
-                        <option value="shipped">Expédiée</option>
-                        <option value="delivered">Livrée</option>
-                        <option value="cancelled">Annulée</option>
-                      </select>
+                      <div className="flex items-center gap-1.5">
+                        <select
+                          value={order.status}
+                          onChange={(e) => handleStatusChange(order._id, e.target.value as Order['status'])}
+                          disabled={statusSaving[order._id]}
+                          className="text-sm border rounded px-2 py-1 disabled:opacity-50"
+                        >
+                          <option value="pending">En Attente</option>
+                          <option value="confirmed">Confirmée</option>
+                          <option value="preparing">Préparation</option>
+                          <option value="shipped">Expédiée</option>
+                          <option value="delivered">Livrée</option>
+                          <option value="cancelled">Annulée</option>
+                        </select>
+                        {statusSaving[order._id] && (
+                          <span className="text-xs text-blue-500 animate-pulse">…</span>
+                        )}
+                      </div>
                     </td>
                     <td className="p-4">
                       <p className="text-sm">{formatDate(order.createdAt)}</p>
                     </td>
                     <td className="p-4">
-                      <Button size="sm" variant="ghost">
+                      <Button size="sm" variant="ghost" onClick={() => setSelectedOrder(order)}>
                         <EyeIcon className="h-4 w-4" />
                       </Button>
                     </td>
@@ -1172,7 +1299,7 @@ export default function AdminDashboard() {
       <ProductModal
         isOpen={productModal.isOpen}
         onClose={() => setProductModal({ isOpen: false, product: null })}
-        product={productModal.product}
+        product={productModal.product || null}
         onSave={handleSaveProduct}
         categories={categories}
         subCategories={subCategories}
@@ -1181,7 +1308,7 @@ export default function AdminDashboard() {
       <CategoryModal
         isOpen={categoryModal.isOpen}
         onClose={() => setCategoryModal({ isOpen: false, category: null, type: 'category' })}
-        category={categoryModal.category}
+        category={categoryModal.category || null}
         onSave={handleSaveCategory}
         type={categoryModal.type || 'category'}
         categories={categories}

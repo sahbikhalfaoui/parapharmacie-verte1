@@ -40,7 +40,7 @@ export async function GET(request: NextRequest) {
     const [total, products] = await Promise.all([
       Product.countDocuments(query),
       Product.find(query)
-        .select(fields || 'name price originalPrice image category subCategory averageRating totalReviews inStock badge brand stockQuantity')
+        .select(fields || 'name description price originalPrice image gallery category subCategory averageRating totalReviews inStock badge brand stockQuantity')
         .populate('category', 'name')
         .populate('subCategory', 'name')
         .sort(sortOptions)

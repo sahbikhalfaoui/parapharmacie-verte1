@@ -47,8 +47,8 @@ export const CategoryModal: React.FC<CategoryModalProps> = ({
         description: category.description || '',
         category: type === 'subcategory' ? 
           (typeof (category as SubCategory).category === 'string' ? 
-            (category as SubCategory).category : 
-            (category as SubCategory).category?._id || '') : ''
+            (category as SubCategory).category as string : 
+            ((category as SubCategory).category as Category)?._id || '') : ''
       })
       if (category.image) {
         setImagePreview(`http://localhost:5000${category.image}`)
