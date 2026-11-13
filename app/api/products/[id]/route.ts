@@ -40,16 +40,29 @@ export async function PUT(
     
     const formData = await request.formData()
     const updateData: Record<string, any> = {}
+    const unsetData: Record<string, ''> = {}
     
+    // Optional fields that the admin can clear by sending an empty string
+    const clearableFields = ['originalPrice', 'subCategory', 'badge']
     const fields = ['name', 'description', 'price', 'originalPrice', 'category', 'subCategory', 'badge', 'stockQuantity']
     fields.forEach(field => {
-      const value = formData.get(field)
-      if (value !== null && value !== '') {
-        if (field === 'stockQuantity') {
-          updateData[field] = parseInt(value as string)
-        } else {
-          updateData[field] = value
-        }
+      const raw = formData.get(field)
+      if (raw === null || typeof raw !== 'string') return
+      const value = raw.trim()
+      if (value === '') {
+        if (clearableFields.includes(field)) unsetData[field] = ''
+        return
+      }
+      if (field === 'stockQuantity') {
+        const qty = parseInt(value, 10)
+        if (!Number.isNaN(qty)) updateData[field] = qty
+      } else if (field === 'badge') {
+        // Normalise known badge labels so the public filters (e.g. ?badge=promo) match
+        const lower = value.toLowerCase()
+        if (lower === 'promo' || lower === 'promotion' || lower === 'promos') updateData.badge = 'Promo'
+        else updateData.badge = value
+      } else {
+        updateData[field] = value
       }
     })
     
@@ -92,7 +105,10 @@ export async function PUT(
       updateData.gallery = galleryImages
     }
     
-    const product = await Product.findByIdAndUpdate(id, updateData, { new: true })
+    const updateOps: Record<string, any> = { $set: updateData }
+    if (Object.keys(unsetData).length > 0) updateOps.$unset = unsetData
+    
+    const product = await Product.findByIdAndUpdate(id, updateOps, { new: true })
     
     if (!product) {
       return NextResponse.json({ error: 'Produit non trouvé' }, { status: 404 })

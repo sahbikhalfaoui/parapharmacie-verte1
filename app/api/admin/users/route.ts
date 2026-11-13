@@ -14,11 +14,9 @@ export async function GET(request: NextRequest) {
     const page = parseInt(searchParams.get('page') || '1')
     const limit = parseInt(searchParams.get('limit') || '100')
     
-    const users = await User.find({})
-      .select('-password')
-      .sort({ createdAt: -1 })
-      .limit(limit)
-      .skip((page - 1) * limit)
+    let q = User.find({}).select('-password').sort({ createdAt: -1 })
+    if (limit > 0) q = q.limit(limit).skip((page - 1) * limit)
+    const users = await q
     
     return NextResponse.json(users)
   } catch (error) {

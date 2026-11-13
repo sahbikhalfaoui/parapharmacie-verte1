@@ -38,7 +38,8 @@ import {
   ModalState, 
   ConfirmModalState 
 } from "./types"
-import { formatDate, getStatusBadge } from "./utils/helpers"
+import { formatDate, getStatusBadge, getPageLabel, getOrderItemProductId, ORDER_STATUS_OPTIONS } from "./utils/helpers"
+import SettingsPanel from "./components/settings-panel"
 
 export default function AdminDashboard() {
   const [activeTab, setActiveTab] = useState('dashboard')
@@ -72,6 +73,10 @@ export default function AdminDashboard() {
   })
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null)
   const [statusSaving, setStatusSaving] = useState<Record<string, boolean>>({})
+  const [orderStatusFilter, setOrderStatusFilter] = useState<'all' | Order['status']>('all')
+  const [orderSearchQuery, setOrderSearchQuery] = useState('')
+  const [orderDateFrom, setOrderDateFrom] = useState('')
+  const [orderDateTo, setOrderDateTo] = useState('')
 
   useEffect(() => {
     checkAuthentication()
@@ -184,7 +189,7 @@ export default function AdminDashboard() {
 
   const loadProducts = async () => {
     try {
-      const response = await apiRequest<{ products: Product[] } | Product[]>('/products?limit=500')
+      const response = await apiRequest<{ products: Product[] } | Product[]>('/products?limit=0')
       console.log('Products loaded:', response)
       
       // Handle both response formats
@@ -198,7 +203,7 @@ export default function AdminDashboard() {
 
   const loadOrders = async () => {
     try {
-      const response = await apiRequest<{ orders: Order[] } | Order[]>('/admin/orders?limit=100')
+      const response = await apiRequest<{ orders: Order[] } | Order[]>('/admin/orders?limit=0')
       console.log('Orders loaded:', response)
       
       // Handle both response formats
@@ -212,7 +217,7 @@ export default function AdminDashboard() {
 
   const loadUsers = async () => {
     try {
-      const response = await apiRequest<{ users: User[] } | User[]>('/admin/users?limit=100')
+      const response = await apiRequest<{ users: User[] } | User[]>('/admin/users?limit=0')
       console.log('Users loaded:', response)
       
       // Handle both response formats
@@ -277,6 +282,30 @@ export default function AdminDashboard() {
     } finally {
       setStatusSaving(prev => ({ ...prev, [orderId]: false }))
     }
+  }
+
+  const handleDeleteOrder = async (orderId: string) => {
+    try {
+      await apiRequest(`/admin/orders/${orderId}`, { method: 'DELETE' })
+      setOrders(prev => prev.filter(o => o._id !== orderId))
+      setSelectedOrder(prev => prev?._id === orderId ? null : prev)
+      loadStats()
+    } catch (error) {
+      console.error('Error deleting order:', error)
+      alert('Erreur lors de la suppression de la commande: ' + (error instanceof Error ? error.message : 'Unknown error'))
+    }
+  }
+
+  const confirmDeleteOrder = (order: Order) => {
+    setConfirmModal({
+      isOpen: true,
+      title: 'Supprimer la commande',
+      message: `Êtes-vous sûr de vouloir supprimer la commande "${order.orderNumber || `CMD-${order._id.slice(-6)}`}" ? Cette action est irréversible.`,
+      onConfirm: () => {
+        handleDeleteOrder(order._id)
+        setConfirmModal({ isOpen: false, title: '', message: '', onConfirm: null })
+      }
+    })
   }
 
   const handleLogout = () => {
@@ -372,6 +401,9 @@ export default function AdminDashboard() {
           </CardContent>
         </Card>
       </div>
+
+      {/* Site settings (delivery fee, hero image, contact infos) */}
+      <SettingsPanel />
 
       {/* Analytics Section */}
       {stats.analytics && (
@@ -540,15 +572,64 @@ export default function AdminDashboard() {
             <CardTitle>Pages les Plus Visitées (Ce Mois)</CardTitle>
           </CardHeader>
           <CardContent>
-            <ResponsiveContainer width="100%" height={Math.max(250, stats.analytics.topPages.slice(0, 10).length * 40)}>
-              <BarChart data={stats.analytics.topPages.slice(0, 10)} layout="vertical" margin={{ left: 100 }}>
-                <CartesianGrid strokeDasharray="3 3" opacity={0.3} />
-                <XAxis type="number" tick={{ fontSize: 12 }} />
-                <YAxis type="category" dataKey="_id" tick={{ fontSize: 11 }} width={100} />
-                <Tooltip />
-                <Bar dataKey="count" name="Visites" fill="#3b82f6" radius={[0, 4, 4, 0]} />
-              </BarChart>
-            </ResponsiveContainer>
+            <div className="space-y-2">
+              {(() => {
+                const pages = stats.analytics.topPages.slice(0, 10)
+                const maxCount = Math.max(1, ...pages.map(p => p.count))
+                return pages.map((page, index) => {
+                  const isProduct = !!page.productId
+                  const label = isProduct
+                    ? (page.productName || 'Produit introuvable')
+                    : getPageLabel(page._id)
+                  const content = (
+                    <>
+                      <span className="w-6 text-sm font-semibold text-muted-foreground text-right">{index + 1}</span>
+                      {isProduct ? (
+                        page.productImage ? (
+                          <img
+                            src={page.productImage}
+                            alt={label}
+                            className="h-10 w-10 object-cover rounded border"
+                            onError={(e) => { (e.target as HTMLImageElement).style.visibility = 'hidden' }}
+                          />
+                        ) : (
+                          <div className="h-10 w-10 bg-gray-200 rounded flex items-center justify-center">
+                            <ImageIcon className="h-5 w-5 text-gray-400" />
+                          </div>
+                        )
+                      ) : (
+                        <div className="h-10 w-10 bg-blue-50 rounded flex items-center justify-center">
+                          <EyeIcon className="h-5 w-5 text-blue-500" />
+                        </div>
+                      )}
+                      <div className="flex-1 min-w-0">
+                        <p className="font-medium truncate">{label}</p>
+                        <div className="mt-1 h-1.5 w-full bg-muted rounded-full overflow-hidden">
+                          <div className="h-full bg-blue-500 rounded-full" style={{ width: `${(page.count / maxCount) * 100}%` }} />
+                        </div>
+                      </div>
+                      <span className="text-sm font-semibold whitespace-nowrap">{page.count} visite{page.count > 1 ? 's' : ''}</span>
+                    </>
+                  )
+                  return isProduct ? (
+                    <a
+                      key={page._id}
+                      href={`/product/${page.productId}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      title="Voir le produit sur le site"
+                      className="flex items-center gap-3 p-2 border rounded-lg hover:bg-muted/40 transition-colors"
+                    >
+                      {content}
+                    </a>
+                  ) : (
+                    <div key={page._id} className="flex items-center gap-3 p-2 border rounded-lg">
+                      {content}
+                    </div>
+                  )
+                })
+              })()}
+            </div>
           </CardContent>
         </Card>
       )}
@@ -966,9 +1047,116 @@ export default function AdminDashboard() {
     </div>
   )
 
-  const renderOrders = () => (
+  const renderOrders = () => {
+    const statusCounts = orders.reduce<Record<string, number>>((acc, o) => {
+      acc[o.status] = (acc[o.status] || 0) + 1
+      return acc
+    }, {})
+
+    const search = orderSearchQuery.trim().toLowerCase()
+    const fromTime = orderDateFrom ? new Date(`${orderDateFrom}T00:00:00`).getTime() : null
+    const toTime = orderDateTo ? new Date(`${orderDateTo}T23:59:59.999`).getTime() : null
+
+    const filteredOrders = orders.filter(order => {
+      if (orderStatusFilter !== 'all' && order.status !== orderStatusFilter) return false
+      if (search) {
+        const number = (order.orderNumber || `CMD-${order._id.slice(-6)}`).toLowerCase()
+        const name = (order.customerInfo?.fullName || '').toLowerCase()
+        const phone = (order.customerInfo?.phone || '').toLowerCase().replace(/\s+/g, '')
+        const searchNoSpace = search.replace(/\s+/g, '')
+        if (!number.includes(search) && !name.includes(search) && !phone.includes(searchNoSpace) && !order._id.toLowerCase().includes(search)) {
+          return false
+        }
+      }
+      if (fromTime !== null || toTime !== null) {
+        const created = new Date(order.createdAt).getTime()
+        if (isNaN(created)) return false
+        if (fromTime !== null && created < fromTime) return false
+        if (toTime !== null && created > toTime) return false
+      }
+      return true
+    })
+
+    const hasActiveFilters = orderStatusFilter !== 'all' || !!search || !!orderDateFrom || !!orderDateTo
+    const inputClass = "flex h-10 rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+
+    return (
     <div className="space-y-6">
-      <h2 className="text-2xl font-bold">Gestion des Commandes ({orders.length})</h2>
+      <h2 className="text-2xl font-bold">
+        Gestion des Commandes ({hasActiveFilters ? `${filteredOrders.length} / ${orders.length}` : orders.length})
+      </h2>
+
+      {/* Status filter chips */}
+      <div className="flex flex-wrap gap-2">
+        <button
+          onClick={() => setOrderStatusFilter('all')}
+          className={`px-3 py-1.5 rounded-full text-sm border transition-colors ${
+            orderStatusFilter === 'all' ? 'bg-primary text-primary-foreground border-primary' : 'bg-background hover:bg-muted'
+          }`}
+        >
+          Toutes ({orders.length})
+        </button>
+        {ORDER_STATUS_OPTIONS.map(opt => (
+          <button
+            key={opt.value}
+            onClick={() => setOrderStatusFilter(opt.value)}
+            className={`px-3 py-1.5 rounded-full text-sm border transition-colors ${
+              orderStatusFilter === opt.value ? 'bg-primary text-primary-foreground border-primary' : 'bg-background hover:bg-muted'
+            }`}
+          >
+            {opt.label} ({statusCounts[opt.value] || 0})
+          </button>
+        ))}
+      </div>
+
+      {/* Search + date range */}
+      <div className="flex flex-col lg:flex-row gap-4 lg:items-end">
+        <div className="relative flex-1">
+          <SearchIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <input
+            type="text"
+            placeholder="Rechercher (n° commande, client, téléphone)..."
+            value={orderSearchQuery}
+            onChange={(e) => setOrderSearchQuery(e.target.value)}
+            className={`${inputClass} w-full pl-10`}
+          />
+        </div>
+        <div className="flex flex-col sm:flex-row gap-4 sm:items-end">
+          <label className="flex flex-col gap-1 text-xs text-muted-foreground">
+            Du
+            <input
+              type="date"
+              value={orderDateFrom}
+              max={orderDateTo || undefined}
+              onChange={(e) => setOrderDateFrom(e.target.value)}
+              className={inputClass}
+            />
+          </label>
+          <label className="flex flex-col gap-1 text-xs text-muted-foreground">
+            Au
+            <input
+              type="date"
+              value={orderDateTo}
+              min={orderDateFrom || undefined}
+              onChange={(e) => setOrderDateTo(e.target.value)}
+              className={inputClass}
+            />
+          </label>
+          {hasActiveFilters && (
+            <Button
+              variant="outline"
+              onClick={() => {
+                setOrderStatusFilter('all')
+                setOrderSearchQuery('')
+                setOrderDateFrom('')
+                setOrderDateTo('')
+              }}
+            >
+              Réinitialiser
+            </Button>
+          )}
+        </div>
+      </div>
 
       {/* Order Detail Modal */}
       {selectedOrder && (
@@ -983,12 +1171,24 @@ export default function AdminDashboard() {
                 <h3 className="text-lg font-bold">Commande #{selectedOrder.orderNumber || selectedOrder._id.slice(-6)}</h3>
                 <p className="text-sm text-muted-foreground">{formatDate(selectedOrder.createdAt)}</p>
               </div>
-              <button
-                onClick={() => setSelectedOrder(null)}
-                className="text-gray-400 hover:text-gray-600 text-xl font-bold leading-none"
-              >
-                ✕
-              </button>
+              <div className="flex items-center gap-2">
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                  onClick={() => confirmDeleteOrder(selectedOrder)}
+                  title="Supprimer la commande"
+                >
+                  <TrashIcon className="h-4 w-4 mr-1" />
+                  Supprimer
+                </Button>
+                <button
+                  onClick={() => setSelectedOrder(null)}
+                  className="text-gray-400 hover:text-gray-600 text-xl font-bold leading-none"
+                >
+                  ✕
+                </button>
+              </div>
             </div>
 
             <div className="p-5 space-y-5">
@@ -1045,9 +1245,36 @@ export default function AdminDashboard() {
                       {selectedOrder.items?.map((item, i) => {
                         const productName = item.name || (typeof item.product === 'object' ? (item.product as any)?.name : null) || 'Produit'
                         const unitPrice = typeof item.price === 'number' ? item.price : parseFloat(String(item.price)) || 0
+                        const productId = getOrderItemProductId(item.product)
+                        const productImage = typeof item.product === 'object' && item.product ? (item.product as Product).image : undefined
+                        const productCell = (
+                          <span className="flex items-center gap-2">
+                            {productImage && (
+                              <img
+                                src={productImage}
+                                alt={productName}
+                                className="h-8 w-8 object-cover rounded border"
+                                onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }}
+                              />
+                            )}
+                            <span>{productName}</span>
+                          </span>
+                        )
                         return (
                           <tr key={i} className="border-t">
-                            <td className="p-3 font-medium">{productName}</td>
+                            <td className="p-3 font-medium">
+                              {productId ? (
+                                <a
+                                  href={`/product/${productId}`}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  title="Voir le produit sur le site"
+                                  className="text-primary hover:underline"
+                                >
+                                  {productCell}
+                                </a>
+                              ) : productCell}
+                            </td>
                             <td className="p-3 text-center">{item.quantity}</td>
                             <td className="p-3 text-right">{unitPrice.toFixed(3)} TND</td>
                             <td className="p-3 text-right font-semibold">{(unitPrice * item.quantity).toFixed(3)} TND</td>
@@ -1085,11 +1312,11 @@ export default function AdminDashboard() {
                   <th className="text-left p-4">Total</th>
                   <th className="text-left p-4">Statut</th>
                   <th className="text-left p-4">Date</th>
-                  <th className="text-left p-4">Détails</th>
+                  <th className="text-left p-4">Actions</th>
                 </tr>
               </thead>
               <tbody>
-                {orders.map((order) => (
+                {filteredOrders.map((order) => (
                   <tr key={order._id} className="border-b hover:bg-muted/20 transition-colors">
                     <td className="p-4">
                       <p className="font-mono text-sm">{order.orderNumber || `CMD-${order._id.slice(-6)}`}</p>
@@ -1142,13 +1369,24 @@ export default function AdminDashboard() {
                       <p className="text-sm">{formatDate(order.createdAt)}</p>
                     </td>
                     <td className="p-4">
-                      <Button size="sm" variant="ghost" onClick={() => setSelectedOrder(order)}>
-                        <EyeIcon className="h-4 w-4" />
-                      </Button>
+                      <div className="flex space-x-2">
+                        <Button size="sm" variant="ghost" onClick={() => setSelectedOrder(order)} title="Voir les détails">
+                          <EyeIcon className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                          onClick={() => confirmDeleteOrder(order)}
+                          title="Supprimer la commande"
+                        >
+                          <TrashIcon className="h-4 w-4" />
+                        </Button>
+                      </div>
                     </td>
                   </tr>
                 ))}
-                {orders.length === 0 && (
+                {filteredOrders.length === 0 && (
                   <tr>
                     <td colSpan={7} className="p-8 text-center text-muted-foreground">
                       Aucune commande trouvée
@@ -1161,7 +1399,8 @@ export default function AdminDashboard() {
         </CardContent>
       </Card>
     </div>
-  )
+    )
+  }
 
   const renderUsers = () => (
     <div className="space-y-6">
@@ -1268,7 +1507,14 @@ export default function AdminDashboard() {
             ))}
           </nav>
 
-          <div className="absolute bottom-4 left-4">
+          <div className="absolute bottom-4 left-4 right-4 flex flex-col items-start gap-1">
+            <a
+              href="/"
+              className="inline-flex items-center h-10 px-4 py-2 rounded-md text-sm font-medium text-muted-foreground hover:bg-accent hover:text-accent-foreground transition-colors"
+            >
+              <ChevronLeftIcon className="h-4 w-4 mr-2" />
+              Retour au site
+            </a>
             <Button variant="ghost" className="text-muted-foreground" onClick={handleLogout}>
               <LogOutIcon className="h-4 w-4 mr-2" />
               Déconnexion

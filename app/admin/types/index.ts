@@ -94,6 +94,9 @@ export interface Stats {
     topPages?: Array<{
       _id: string;
       count: number;
+      productId?: string;
+      productName?: string;
+      productImage?: string;
     }>;
     revenue?: {
       total: number;

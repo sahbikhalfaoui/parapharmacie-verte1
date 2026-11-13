@@ -13,7 +13,11 @@ export async function GET(request: NextRequest) {
     const subCategory = searchParams.get('subCategory')
     const search = searchParams.get('search')
     const page = parseInt(searchParams.get('page') || '1')
-    const limit = parseInt(searchParams.get('limit') || '50')
+    const limitParam = searchParams.get('limit')
+    const parsedLimit = parseInt(limitParam || '50')
+    // limit=0 or all=true -> return every matching product (used by the admin)
+    const noLimit = searchParams.get('all') === 'true' || (limitParam !== null && parsedLimit === 0)
+    const limit = noLimit ? 0 : (isNaN(parsedLimit) || parsedLimit < 0 ? 50 : parsedLimit)
     const sortBy = searchParams.get('sortBy') || 'createdAt'
     const sortOrder = searchParams.get('sortOrder') || 'desc'
     const inStock = searchParams.get('inStock')
@@ -34,26 +38,28 @@ export async function GET(request: NextRequest) {
     const sortOptions: Record<string, 1 | -1> = {}
     sortOptions[sortBy] = sortOrder === 'desc' ? -1 : 1
     
-    const skip = (page - 1) * limit
+    const skip = noLimit ? 0 : (page - 1) * limit
+    
+    let findQuery = Product.find(query)
+      .select(fields ? fields.split(/[\s,]+/).filter(Boolean).join(' ') : 'name description price originalPrice image gallery category subCategory averageRating totalReviews inStock badge brand stockQuantity')
+      .populate('category', 'name')
+      .populate('subCategory', 'name')
+      .sort(sortOptions)
+    if (!noLimit) {
+      findQuery = findQuery.skip(skip).limit(limit)
+    }
     
     // Run count and find in parallel
     const [total, products] = await Promise.all([
       Product.countDocuments(query),
-      Product.find(query)
-        .select(fields || 'name description price originalPrice image gallery category subCategory averageRating totalReviews inStock badge brand stockQuantity')
-        .populate('category', 'name')
-        .populate('subCategory', 'name')
-        .sort(sortOptions)
-        .skip(skip)
-        .limit(limit)
-        .lean()
+      findQuery.lean()
     ])
     
     return NextResponse.json({
       products,
       total,
-      pages: Math.ceil(total / limit),
-      currentPage: page
+      pages: noLimit ? 1 : Math.ceil(total / limit),
+      currentPage: noLimit ? 1 : page
     })
   } catch (error) {
     console.error('Products error:', error)

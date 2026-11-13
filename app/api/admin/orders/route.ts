@@ -12,18 +12,22 @@ export async function GET(request: NextRequest) {
     
     const { searchParams } = new URL(request.url)
     const page = parseInt(searchParams.get('page') || '1')
-    const limit = parseInt(searchParams.get('limit') || '100')
+    const limit = (() => { const n = parseInt(searchParams.get('limit') || '100'); return isNaN(n) || n < 0 ? 100 : n })()
     const status = searchParams.get('status')
     
     const query: Record<string, any> = {}
     if (status) query.status = status
     
-    const orders = await Order.find(query)
+    let ordersQuery = Order.find(query)
       .populate('user', 'name email phone')
       .populate('items.product', 'name image')
       .sort({ createdAt: -1 })
-      .limit(limit)
-      .skip((page - 1) * limit)
+    // limit=0 (or all=true) -> return every order
+    const noLimit = searchParams.get('all') === 'true' || limit === 0
+    if (!noLimit) {
+      ordersQuery = ordersQuery.limit(limit).skip((page - 1) * limit)
+    }
+    const orders = await ordersQuery
     
     return NextResponse.json(orders)
   } catch (error) {

@@ -17,6 +17,17 @@ interface ProductModalProps {
   subCategories: SubCategory[];
 }
 
+const BADGE_OPTIONS = ['Nouveau', 'Bestseller', 'Premium', 'Promo']
+
+// Map stored badge values (e.g. "promo", "PROMO", "Promotion") to the select options
+const normalizeBadge = (badge?: string): string => {
+  const value = (badge || '').trim()
+  if (!value) return ''
+  const lower = value.toLowerCase()
+  if (lower === 'promotion' || lower === 'promos') return 'Promo'
+  return BADGE_OPTIONS.find(opt => opt.toLowerCase() === lower) || value
+}
+
 interface ProductFormData {
   name: string;
   description: string;
@@ -61,7 +72,7 @@ export const ProductModal: React.FC<ProductModalProps> = ({
         originalPrice: product.originalPrice || '',
         category: typeof product.category === 'string' ? product.category : product.category?._id || '',
         subCategory: typeof product.subCategory === 'string' ? product.subCategory : product.subCategory?._id || '',
-        badge: product.badge || '',
+        badge: normalizeBadge(product.badge),
         stockQuantity: product.stockQuantity || 100,
         inStock: product.inStock !== false
       })
@@ -103,10 +114,15 @@ export const ProductModal: React.FC<ProductModalProps> = ({
     try {
       const formDataToSend = new FormData()
       
+      // Optional fields are always sent on update (even empty) so they can be cleared
+      const clearableOnUpdate: (keyof ProductFormData)[] = ['badge', 'originalPrice', 'subCategory']
       Object.keys(formData).forEach(key => {
         const value = formData[key as keyof ProductFormData]
-        if (value !== undefined && value !== '') {
-          formDataToSend.append(key, value.toString())
+        if (value === undefined || value === null) return
+        if (typeof value === 'number' && Number.isNaN(value)) return
+        const str = value.toString().trim()
+        if (str !== '' || (product && clearableOnUpdate.includes(key as keyof ProductFormData))) {
+          formDataToSend.append(key, str)
         }
       })
 
@@ -248,6 +264,9 @@ export const ProductModal: React.FC<ProductModalProps> = ({
                 <option value="Bestseller">Bestseller</option>
                 <option value="Premium">Premium</option>
                 <option value="Promo">Promo</option>
+                {formData.badge && !BADGE_OPTIONS.includes(formData.badge) && (
+                  <option value={formData.badge}>{formData.badge}</option>
+                )}
               </select>
             </div>
           </div>

@@ -20,8 +20,11 @@ import {
   Send,
   Facebook,
   Instagram,
-  Mail
+  Mail,
+  Phone,
+  MessageCircle
 } from "lucide-react"
+import { useSiteSettings } from "@/lib/use-site-settings"
 
 interface Product {
   _id: string
@@ -94,6 +97,12 @@ export default function ProductPage() {
   const [hoverRating, setHoverRating] = useState(0)
   const [isCartOpen, setIsCartOpen] = useState(false)
   const [cartItems, setCartItems] = useState<CartItem[]>([])
+  const siteSettings = useSiteSettings()
+  const contactEmail = siteSettings.contactEmail?.trim() || 'biopharma.tunisie@gmail.com'
+  const contactPhone = siteSettings.contactPhone?.trim() || ''
+  const contactWhatsapp = siteSettings.contactWhatsapp?.trim() || ''
+  const facebookUrl = siteSettings.facebookUrl?.trim() || 'https://www.facebook.com/Biopharma.parapharmacie'
+  const instagramUrl = siteSettings.instagramUrl?.trim() || 'https://www.instagram.com/biopharma_grombalia'
 
   // Load cart items from localStorage
   const loadCartItems = useCallback(() => {
@@ -898,7 +907,7 @@ export default function ProductPage() {
               </p>
               <div className="flex items-center gap-3">
                 <a
-                  href="https://www.facebook.com/Biopharma.parapharmacie"
+                  href={facebookUrl}
                   target="_blank"
                   rel="noopener noreferrer"
                   aria-label="Facebook BioPharma"
@@ -907,7 +916,7 @@ export default function ProductPage() {
                   <Facebook className="w-5 h-5" />
                 </a>
                 <a
-                  href="https://www.instagram.com/biopharma_grombalia"
+                  href={instagramUrl}
                   target="_blank"
                   rel="noopener noreferrer"
                   aria-label="Instagram BioPharma"
@@ -916,12 +925,34 @@ export default function ProductPage() {
                   <Instagram className="w-5 h-5" />
                 </a>
                 <a
-                  href="mailto:biopharma.tunisie@gmail.com"
+                  href={`mailto:${contactEmail}`}
                   aria-label="Email BioPharma"
                   className="w-10 h-10 rounded-full border border-gray-700 text-gray-300 hover:text-white hover:border-green-500 hover:bg-green-600/20 transition-colors flex items-center justify-center"
                 >
                   <Mail className="w-5 h-5" />
                 </a>
+                {contactPhone && (
+                  <a
+                    href={`tel:${contactPhone.replace(/\s+/g, '')}`}
+                    aria-label="Téléphone BioPharma"
+                    title={contactPhone}
+                    className="w-10 h-10 rounded-full border border-gray-700 text-gray-300 hover:text-white hover:border-green-500 hover:bg-green-600/20 transition-colors flex items-center justify-center"
+                  >
+                    <Phone className="w-5 h-5" />
+                  </a>
+                )}
+                {contactWhatsapp && (
+                  <a
+                    href={`https://wa.me/${contactWhatsapp.replace(/[^\d]/g, '')}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    aria-label="WhatsApp BioPharma"
+                    title={contactWhatsapp}
+                    className="w-10 h-10 rounded-full border border-gray-700 text-gray-300 hover:text-white hover:border-green-500 hover:bg-green-600/20 transition-colors flex items-center justify-center"
+                  >
+                    <MessageCircle className="w-5 h-5" />
+                  </a>
+                )}
               </div>
             </div>
 

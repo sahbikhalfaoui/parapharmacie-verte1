@@ -4,6 +4,9 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { ChevronLeft, ChevronRight, Play, Pause, ShoppingCart, Star, Sparkles } from "lucide-react"
 import { motion, useScroll, useTransform, useSpring, AnimatePresence } from "framer-motion"
+import { fetchSiteSettings } from "@/lib/use-site-settings"
+
+const DEFAULT_HERO_IMAGE = "https://images.unsplash.com/photo-1631549916768-4119b2e5f926?w=1200&h=500&fit=crop"
 
 interface Product {
   _id: string
@@ -33,6 +36,9 @@ const HeroSection: React.FC<HeroSectionProps> = ({ onAddToCart, onProductClick }
   const [touchEnd, setTouchEnd] = useState(0)
   const [promotionalProducts, setPromotionalProducts] = useState<Product[]>([])
   const [promoCurrentIndex, setPromoCurrentIndex] = useState(0)
+  // Main hero image (admin-editable via site settings). null = settings not loaded yet,
+  // so we don't flash the default picture before swapping to the custom one.
+  const [heroImage, setHeroImage] = useState<string | null>(null)
   const scrollRef = useRef<HTMLDivElement>(null)
   const promoScrollRef = useRef<HTMLDivElement>(null)
   const progressInterval = useRef<NodeJS.Timeout | null>(null)
@@ -56,7 +62,7 @@ const HeroSection: React.FC<HeroSectionProps> = ({ onAddToCart, onProductClick }
 
   const banners = [
     {
-      image: "https://images.unsplash.com/photo-1631549916768-4119b2e5f926?w=1200&h=500&fit=crop",
+      image: heroImage || "",
       title: "Promotions Exclusives",
       subtitle: "Jusqu'à -40% sur vos produits préférés",
       description: "Vitamines, compléments alimentaires et soins de beauté"
@@ -80,19 +86,37 @@ const HeroSection: React.FC<HeroSectionProps> = ({ onAddToCart, onProductClick }
     loadPromotionalProducts()
   }, [])
 
+  useEffect(() => {
+    let alive = true
+    fetchSiteSettings()
+      .then(s => { if (alive) setHeroImage(s.heroImage?.trim() || DEFAULT_HERO_IMAGE) })
+      .catch(() => { if (alive) setHeroImage(DEFAULT_HERO_IMAGE) })
+    return () => { alive = false }
+  }, [])
+
+  const parsePrice = (value: unknown): number => {
+    if (value === null || value === undefined) return 0
+    return parseFloat(String(value).replace(/[^\d.-]/g, '')) || 0
+  }
+
   const loadPromotionalProducts = async () => {
     try {
-      const response = await fetch('/api/products?badge=promo&limit=20&fields=name,price,originalPrice,image,category,subCategory,badge,averageRating,totalReviews,inStock&sortBy=createdAt&sortOrder=desc')
+      // NOTE: the API passes `fields` straight to mongoose .select(), which expects
+      // SPACE-separated paths. A comma-separated list was treated as one unknown path,
+      // so only _id came back, p.price was undefined and the map threw -> empty promo list.
+      const fields = encodeURIComponent('name description price originalPrice image category subCategory badge averageRating totalReviews inStock')
+      const response = await fetch(`/api/products?badge=promo&limit=20&fields=${fields}&sortBy=createdAt&sortOrder=desc`, { cache: 'no-store' })
       const data = await response.json()
       const products = (data.products || []).map((p: any) => ({
         _id: p._id,
         name: p.name,
-        price: parseFloat(p.price.toString().replace(/[^\d.-]/g, '')) || 0,
+        description: p.description,
+        price: parsePrice(p.price),
         image: p.image,
         categoryName: p.category?.name || 'Non catégorisé',
         subcategoryName: p.subCategory?.name || p.subcategory?.name,
         badge: p.badge,
-        originalPrice: p.originalPrice ? parseFloat(p.originalPrice.toString().replace(/[^\d.-]/g, '')) : null,
+        originalPrice: p.originalPrice ? (parsePrice(p.originalPrice) || undefined) : undefined,
         averageRating: p.averageRating || 0,
         totalReviews: p.totalReviews || 0,
         inStock: p.inStock !== false
@@ -246,11 +270,16 @@ const HeroSection: React.FC<HeroSectionProps> = ({ onAddToCart, onProductClick }
               {banners.map((banner, index) => (
                 <div key={index} className="relative min-w-full h-full flex-shrink-0 snap-start">
                   <div className="absolute inset-0 overflow-hidden">
-                    <img 
-                      src={banner.image}
-                      alt={banner.title}
-                      className="w-full h-full object-cover transform transition-transform duration-[7000ms] hover:scale-110"
-                    />
+                    {banner.image ? (
+                      <img 
+                        src={banner.image}
+                        alt={banner.title}
+                        className="w-full h-full object-cover transform transition-transform duration-[7000ms] hover:scale-110"
+                        onError={index === 0 && banner.image !== DEFAULT_HERO_IMAGE ? () => setHeroImage(DEFAULT_HERO_IMAGE) : undefined}
+                      />
+                    ) : (
+                      <div className="w-full h-full bg-gradient-to-br from-green-700 via-emerald-600 to-teal-600 animate-pulse" />
+                    )}
                   </div>
                   <div className="absolute inset-0 bg-gradient-to-r from-black/80 via-black/50 to-transparent"></div>
                   <div className="absolute inset-0 flex flex-col justify-center px-6 sm:px-12 lg:px-16">
@@ -361,11 +390,15 @@ const HeroSection: React.FC<HeroSectionProps> = ({ onAddToCart, onProductClick }
                       : 'ring-2 ring-gray-300 opacity-60 hover:opacity-100'
                   }`}
                 >
-                  <img 
-                    src={banner.image} 
-                    alt={`Thumbnail ${index + 1}`}
-                    className="w-full h-full object-cover"
-                  />
+                  {banner.image ? (
+                    <img 
+                      src={banner.image} 
+                      alt={`Thumbnail ${index + 1}`}
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    <div className="w-full h-full bg-gradient-to-br from-green-700 to-teal-600" />
+                  )}
                   {currentSlide === index && (
                     <div className="absolute inset-0 bg-green-500/20"></div>
                   )}

@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import mongoose from 'mongoose'
 import connectToDatabase from '@/lib/mongodb'
 import { User, Order, Product, Category, PageView } from '@/lib/models'
 import { requireAdmin } from '@/lib/auth'
@@ -69,6 +70,38 @@ export async function GET(request: NextRequest) {
       ])
     ])
     
+    // Resolve product pages (/product/<id>) to product name + image
+    const productIdFromPath = (path: unknown): string | null => {
+      if (typeof path !== 'string') return null
+      const match = path.match(/^\/product\/([^/?#]+)/)
+      if (!match) return null
+      const id = match[1]
+      return mongoose.Types.ObjectId.isValid(id) && /^[a-f0-9]{24}$/i.test(id) ? id : null
+    }
+    const productIds = Array.from(new Set(
+      (topPages as Array<{ _id: string }>).map(p => productIdFromPath(p._id)).filter((id): id is string => !!id)
+    ))
+    let productMap = new Map<string, { name?: string; image?: string }>()
+    if (productIds.length > 0) {
+      try {
+        const found = await Product.find({ _id: { $in: productIds } }).select('name image').lean()
+        productMap = new Map(
+          (found as Array<{ _id: unknown; name?: string; image?: string }>).map(p => [String(p._id), { name: p.name, image: p.image }])
+        )
+      } catch (e) {
+        console.error('Top pages product lookup error:', e)
+      }
+    }
+    const topPagesResolved = (topPages as Array<{ _id: string; count: number }>).map(p => {
+      const productId = productIdFromPath(p._id)
+      const product = productId ? productMap.get(productId) : undefined
+      return {
+        ...p,
+        ...(productId ? { productId } : {}),
+        ...(product ? { productName: product.name, productImage: product.image } : {})
+      }
+    })
+    
     // Daily views for chart (last 7 days)
     const dailyViews = await PageView.aggregate([
       { $match: { createdAt: { $gte: thisWeek } } },
@@ -112,7 +145,7 @@ export async function GET(request: NextRequest) {
           month: uniqueVisitorsMonth
         },
         dailyViews,
-        topPages,
+        topPages: topPagesResolved,
         revenue: {
           total: totalRevenue,
           month: monthRevenue

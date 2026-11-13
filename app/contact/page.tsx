@@ -20,6 +20,7 @@ import {
   Linkedin
 } from "lucide-react"
 import { motion } from "framer-motion"
+import { useSiteSettings } from "@/lib/use-site-settings"
 
 interface User {
   id?: string
@@ -40,6 +41,16 @@ export default function ContactPage() {
   const [submitted, setSubmitted] = useState(false)
   const [error, setError] = useState("")
   const [user, setUser] = useState<User | null>(null)
+  const settings = useSiteSettings()
+  const contactPhone = settings.contactPhone?.trim() || '+216 26 744 525'
+  const contactEmail = settings.contactEmail?.trim() || 'biopharma.tunisie@gmail.com'
+  const contactAddress = settings.contactAddress?.trim() || 'Avenue Habib Bourguiba, Tunis'
+  const contactWhatsapp = settings.contactWhatsapp?.trim() || ''
+  const contactHours = settings.contactHours?.trim() || ''
+  const facebookUrl = settings.facebookUrl?.trim() || 'https://www.facebook.com/Biopharma.parapharmacie'
+  const instagramUrl = settings.instagramUrl?.trim() || 'https://www.instagram.com/biopharma_grombalia'
+  const telHref = `tel:${contactPhone.replace(/\s+/g, '')}`
+  const whatsappHref = contactWhatsapp ? `https://wa.me/${contactWhatsapp.replace(/[^\d]/g, '')}` : ''
 
   React.useEffect(() => {
     const userData = localStorage.getItem('userData')
@@ -143,9 +154,19 @@ export default function ContactPage() {
               </CardHeader>
               <CardContent>
                 <p className="text-gray-600 mb-2">Appelez-nous du lundi au samedi</p>
-                <a href="tel:+21612345678" className="text-green-600 font-semibold hover:text-green-700">
-                  +216 12 345 678
+                <a href={telHref} className="text-green-600 font-semibold hover:text-green-700">
+                  {contactPhone}
                 </a>
+                {whatsappHref && (
+                  <a
+                    href={whatsappHref}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="block mt-2 text-sm text-green-600 hover:text-green-700"
+                  >
+                    WhatsApp : {contactWhatsapp}
+                  </a>
+                )}
               </CardContent>
             </Card>
           </motion.div>
@@ -164,8 +185,8 @@ export default function ContactPage() {
               </CardHeader>
               <CardContent>
                 <p className="text-gray-600 mb-2">Envoyez-nous un message</p>
-                <a href="mailto:contact@biopharma.tn" className="text-green-600 font-semibold hover:text-green-700">
-                  contact@biopharma.tn
+                <a href={`mailto:${contactEmail}`} className="text-green-600 font-semibold hover:text-green-700 break-all">
+                  {contactEmail}
                 </a>
               </CardContent>
             </Card>
@@ -185,9 +206,14 @@ export default function ContactPage() {
               </CardHeader>
               <CardContent>
                 <p className="text-gray-600 mb-2">Visitez notre pharmacie</p>
-                <p className="text-green-600 font-semibold">
-                  Avenue Habib Bourguiba, Tunis
-                </p>
+                <a
+                  href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(contactAddress)}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-green-600 font-semibold hover:text-green-700 whitespace-pre-line"
+                >
+                  {contactAddress}
+                </a>
               </CardContent>
             </Card>
           </motion.div>
@@ -345,6 +371,9 @@ export default function ContactPage() {
               </div>
             </CardHeader>
             <CardContent>
+              {contactHours ? (
+                <p className="text-gray-700 whitespace-pre-line">{contactHours}</p>
+              ) : (
               <div className="grid md:grid-cols-2 gap-4">
                 <div className="flex justify-between py-2 border-b">
                   <span className="font-medium">Lundi - Vendredi</span>
@@ -363,6 +392,7 @@ export default function ContactPage() {
                   <span className="text-gray-600">Fermé</span>
                 </div>
               </div>
+              )}
             </CardContent>
           </Card>
         </div>
@@ -373,10 +403,10 @@ export default function ContactPage() {
         <div className="max-w-7xl mx-auto px-4 text-center">
           <p className="text-gray-400 mb-4">© 2026 BioPharma. Tous droits réservés.</p>
           <div className="flex justify-center gap-4">
-            <a href="https://www.facebook.com/Biopharma.parapharmacie" target="_blank" rel="noopener noreferrer" className="text-gray-400 hover:text-white transition-colors">
+            <a href={facebookUrl} target="_blank" rel="noopener noreferrer" className="text-gray-400 hover:text-white transition-colors">
               <Facebook className="w-5 h-5" />
             </a>
-            <a href="https://www.instagram.com/biopharma_grombalia" target="_blank" rel="noopener noreferrer" className="text-gray-400 hover:text-white transition-colors">
+            <a href={instagramUrl} target="_blank" rel="noopener noreferrer" className="text-gray-400 hover:text-white transition-colors">
               <Instagram className="w-5 h-5" />
             </a>
             <a href="#" className="text-gray-400 hover:text-white transition-colors">

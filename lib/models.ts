@@ -133,7 +133,7 @@ export interface IOrderItem {
 export interface ICustomerInfo {
   fullName: string
   phone: string
-  email: string
+  email?: string
   address: string
   city: string
   notes?: string
@@ -163,7 +163,7 @@ const orderSchema = new Schema<IOrder>({
   customerInfo: {
     fullName: { type: String, required: true },
     phone: { type: String, required: true },
-    email: { type: String, required: true },
+    email: { type: String, default: '' },
     address: { type: String, required: true },
     city: { type: String, required: true },
     notes: String
@@ -266,6 +266,37 @@ const contactMessageSchema = new Schema<IContactMessage>({
   createdAt: { type: Date, default: Date.now }
 })
 
+// Site Settings Schema (single document, key = 'site')
+export interface ISiteSettings extends Document {
+  key: string
+  deliveryFee: number
+  freeDeliveryThreshold: number
+  heroImage?: string
+  contactPhone?: string
+  contactEmail?: string
+  contactAddress?: string
+  contactWhatsapp?: string
+  contactHours?: string
+  facebookUrl?: string
+  instagramUrl?: string
+  updatedAt: Date
+}
+
+const siteSettingsSchema = new Schema<ISiteSettings>({
+  key: { type: String, default: 'site', unique: true },
+  deliveryFee: { type: Number, default: 15 },
+  freeDeliveryThreshold: { type: Number, default: 150 },
+  heroImage: { type: String, default: '' },
+  contactPhone: { type: String, default: '+216 26 744 525' },
+  contactEmail: { type: String, default: 'biopharma.tunisie@gmail.com' },
+  contactAddress: { type: String, default: '' },
+  contactWhatsapp: { type: String, default: '' },
+  contactHours: { type: String, default: '' },
+  facebookUrl: { type: String, default: '' },
+  instagramUrl: { type: String, default: '' },
+  updatedAt: { type: Date, default: Date.now }
+})
+
 // Export models with lazy initialization to avoid "Cannot overwrite model" errors
 export const User: Model<IUser> = mongoose.models.User || mongoose.model<IUser>('User', userSchema)
 export const Category: Model<ICategory> = mongoose.models.Category || mongoose.model<ICategory>('Category', categorySchema)
@@ -303,3 +334,4 @@ export async function updateProductRating(productId: mongoose.Types.ObjectId | s
     ratingBreakdown
   })
 }
+export const SiteSettings: Model<ISiteSettings> = mongoose.models.SiteSettings || mongoose.model<ISiteSettings>('SiteSettings', siteSettingsSchema)

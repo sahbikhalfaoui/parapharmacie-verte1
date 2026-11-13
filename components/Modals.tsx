@@ -8,6 +8,7 @@ import {
   ShieldIcon, XIcon, ShoppingCartIcon, MinusIcon, PlusIcon, 
   TrashIcon, LogOutIcon 
 } from "./Icons"
+import { useSiteSettings } from "@/lib/use-site-settings"
 
 // ==================== TYPES ====================
 interface User {
@@ -48,6 +49,10 @@ interface CartSheetProps {
   updateQuantity: (id: string, quantity: number) => void
   removeFromCart: (id: string) => void
   clearCart: () => void
+  /** Empties the cart without confirmation (called after a successful order). */
+  onOrderSuccess?: () => void
+  /** Called with the refreshed user data after an order by a logged-in user. */
+  onUserUpdate?: (user: any) => void
 }
 
 declare global {
@@ -513,18 +518,50 @@ export const ProfileDropdown: React.FC<ProfileDropdownProps> = ({ user, onLogout
 
 // ==================== CART SHEET ====================
 export const CartSheet: React.FC<CartSheetProps> = ({ 
-  isOpen, onClose, cartItems, updateQuantity, removeFromCart, clearCart 
+  isOpen, onClose, cartItems, updateQuantity, removeFromCart, clearCart, onOrderSuccess, onUserUpdate
 }) => {
+  const settings = useSiteSettings()
   const [showCheckout, setShowCheckout] = useState(false)
   const [orderForm, setOrderForm] = useState({
     fullName: '', phone: '', email: '', address: '', city: '', notes: ''
   })
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [orderSuccess, setOrderSuccess] = useState<{ orderNumber: string; finalTotal: number } | null>(null)
 
   const totalItems = cartItems.reduce((sum, item) => sum + (item.quantity || 0), 0)
   const totalPrice = cartItems.reduce((sum, item) => sum + (parseFloat(item.price.toString()) * (item.quantity || 0)), 0)
-  const deliveryFee = totalPrice > 150 ? 0 : 15
+  const freeThreshold = Number(settings.freeDeliveryThreshold) || 0
+  const baseDeliveryFee = Number(settings.deliveryFee) || 0
+  const deliveryFee = freeThreshold > 0 && totalPrice >= freeThreshold ? 0 : baseDeliveryFee
   const finalTotal = totalPrice + deliveryFee
+
+  // Pre-fill the checkout form with the logged-in user's saved details
+  useEffect(() => {
+    if (!showCheckout) return
+    const token = localStorage.getItem('authToken')
+    if (!token) return
+
+    const fill = (u: any) => {
+      if (!u) return
+      setOrderForm(prev => ({
+        ...prev,
+        fullName: prev.fullName || u.name || '',
+        phone: prev.phone || u.phone || '',
+        email: prev.email || u.email || '',
+        address: prev.address || u.address || '',
+        city: prev.city || u.city || '',
+      }))
+    }
+
+    try { fill(JSON.parse(localStorage.getItem('userData') || 'null')) } catch {}
+
+    let alive = true
+    fetch('/api/auth/profile', { headers: { 'Authorization': `Bearer ${token}` } })
+      .then(r => (r.ok ? r.json() : null))
+      .then(u => { if (alive) fill(u) })
+      .catch(() => {})
+    return () => { alive = false }
+  }, [showCheckout])
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setOrderForm(prev => ({ ...prev, [e.target.name]: e.target.value }))
@@ -537,14 +574,13 @@ export const CartSheet: React.FC<CartSheetProps> = ({
     try {
       const token = localStorage.getItem('authToken')
       const orderData = {
-        user: JSON.parse(localStorage.getItem('userData') || '{}')?.id || null,
         items: cartItems.map(item => ({
           product: item._id,
           name: item.name,
           price: item.price,
           quantity: item.quantity || 1
         })),
-        customerInfo: orderForm,
+        customerInfo: { ...orderForm, email: orderForm.email.trim() || '' },
         totalPrice,
         deliveryFee,
         finalTotal,
@@ -563,11 +599,25 @@ export const CartSheet: React.FC<CartSheetProps> = ({
       const data = await response.json()
       if (!response.ok) throw new Error(data.error || 'Order failed')
 
-      
-      clearCart()
+      // Keep the logged-in user's saved details in sync for the next order
+      if (token && data.user) {
+        try {
+          const current = JSON.parse(localStorage.getItem('userData') || '{}')
+          const merged = { ...current, ...data.user }
+          localStorage.setItem('userData', JSON.stringify(merged))
+          onUserUpdate?.(merged)
+        } catch {}
+      }
+
+      // Empty the cart automatically (no confirmation) and show the success state
+      if (onOrderSuccess) onOrderSuccess()
+      else localStorage.removeItem('cart')
+      setOrderSuccess({
+        orderNumber: data.order?.orderNumber || '',
+        finalTotal: typeof data.order?.finalTotal === 'number' ? data.order.finalTotal : finalTotal,
+      })
       setShowCheckout(false)
       setOrderForm({ fullName: '', phone: '', email: '', address: '', city: '', notes: '' })
-      onClose()
     } catch (err) {
       alert('Erreur lors de la commande: ' + (err as Error).message)
     } finally {
@@ -580,6 +630,12 @@ export const CartSheet: React.FC<CartSheetProps> = ({
     setOrderForm({ fullName: '', phone: '', email: '', address: '', city: '', notes: '' })
   }
 
+  const handleClose = () => {
+    setOrderSuccess(null)
+    setShowCheckout(false)
+    onClose()
+  }
+
   if (!isOpen) return null
 
   return (
@@ -589,23 +645,47 @@ export const CartSheet: React.FC<CartSheetProps> = ({
           <div className="flex items-center justify-between mb-4 md:mb-6">
             <div>
               <h2 className="text-lg md:text-xl font-bold bg-gradient-to-r from-green-600 to-emerald-600 bg-clip-text text-transparent">
-                {showCheckout ? "Commande" : "Panier"}
+                {orderSuccess ? "Commande confirmée" : showCheckout ? "Commande" : "Panier"}
               </h2>
               <p className="text-xs md:text-sm text-gray-600">
-                {!showCheckout && totalItems === 0 ? "Votre panier est vide" : 
+                {orderSuccess ? "Merci pour votre confiance" :
+                 !showCheckout && totalItems === 0 ? "Votre panier est vide" : 
                  !showCheckout ? `${totalItems} article${totalItems !== 1 ? 's' : ''} dans votre panier` :
                  "Complétez vos informations de commande"}
               </p>
             </div>
             <button 
-              onClick={showCheckout ? resetCheckout : onClose} 
+              onClick={showCheckout && !orderSuccess ? resetCheckout : handleClose}
               className="text-gray-400 hover:text-gray-600 transition-colors"
             >
               <XIcon className="h-6 w-6" />
             </button>
           </div>
 
-          {!showCheckout ? (
+          {orderSuccess ? (
+            <div className="flex flex-col items-center justify-center text-center py-10 px-4">
+              <div className="w-20 h-20 rounded-full bg-green-100 flex items-center justify-center mb-6">
+                <svg className="w-10 h-10 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
+                </svg>
+              </div>
+              <h3 className="text-xl md:text-2xl font-bold text-gray-900 mb-2">Commande passée avec succès !</h3>
+              {orderSuccess.orderNumber && (
+                <p className="text-gray-700 mb-1">
+                  Numéro de commande : <span className="font-semibold text-green-700">{orderSuccess.orderNumber}</span>
+                </p>
+              )}
+              <p className="text-gray-700 mb-4">
+                Montant à payer à la livraison : <span className="font-semibold">{orderSuccess.finalTotal.toFixed(3)} TND</span>
+              </p>
+              <p className="text-sm text-gray-600 mb-8 max-w-md">
+                Nous vous contacterons très prochainement par téléphone pour confirmer votre commande.
+              </p>
+              <Button onClick={handleClose} className="bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700">
+                Continuer les Achats
+              </Button>
+            </div>
+          ) : !showCheckout ? (
             <>
               {cartItems.length === 0 ? (
                 <div className="flex flex-col items-center justify-center h-64 text-center">
@@ -675,9 +755,9 @@ export const CartSheet: React.FC<CartSheetProps> = ({
                           {deliveryFee === 0 ? <span className="text-green-600">Gratuit</span> : `${deliveryFee.toFixed(3)} TND`}
                         </span>
                       </div>
-                      {totalPrice < 150 && (
+                      {freeThreshold > 0 && totalPrice < freeThreshold && (
                         <p className="text-sm text-green-600 bg-green-50 p-2 rounded-lg">
-                          Ajoutez {(150 - totalPrice).toFixed(3)} TND de plus pour la livraison gratuite !
+                          Ajoutez {(freeThreshold - totalPrice).toFixed(3)} TND de plus pour la livraison gratuite !
                         </p>
                       )}
                       <div className="flex justify-between items-center text-lg font-bold border-t-2 pt-3 border-gray-200">
@@ -745,17 +825,18 @@ export const CartSheet: React.FC<CartSheetProps> = ({
                   
                   <div className="space-y-2">
                     <Label htmlFor="email" className="text-xs md:text-sm font-medium text-gray-700">
-                      Adresse Email *
+                      Adresse Email (optionnel)
                     </Label>
-                    <Input 
-                      id="email" 
-                      name="email" 
-                      type="email" 
-                      placeholder="Adresse email" 
-                      value={orderForm.email} 
-                      onChange={handleInputChange} 
+                    <Input
+                      id="email"
+                      name="email"
+                      type="text"
+                      inputMode="email"
+                      autoComplete="email"
+                      placeholder="Adresse email (optionnel)"
+                      value={orderForm.email}
+                      onChange={handleInputChange}
                       className="border-2 border-gray-200 focus:border-green-400 text-sm"
-                      required 
                     />
                   </div>
                   

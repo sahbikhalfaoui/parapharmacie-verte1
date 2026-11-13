@@ -17,13 +17,16 @@ import {
   Heart,
   TrendingUp,
   Facebook,
-  Instagram
+  Instagram,
+  Clock,
+  MessageCircle
 } from "lucide-react"
 import HeroSection from "@/components/HeroSection"
 import ProductsSection from "@/components/ProductsSection"
 import Navbar from "@/components/Navbar"
 import { ToastContainer } from "@/components/Toast"
 import { ConfirmModal } from "@/components/ConfirmModal"
+import { useSiteSettings } from "@/lib/use-site-settings"
 
 interface User {
   id?: string
@@ -123,6 +126,13 @@ export default function VitaPharmWebsite() {
     type: "warning"
   })
   const [globalSearchTerm, setGlobalSearchTerm] = useState("")
+  const siteSettings = useSiteSettings()
+  const contactEmail = siteSettings.contactEmail || "biopharma.tunisie@gmail.com"
+  const contactPhone = siteSettings.contactPhone || "26 744 525"
+  const contactAddress = siteSettings.contactAddress || "Rue El Moez, Grombalia, Tunisia, 8030"
+  const facebookUrl = siteSettings.facebookUrl || "https://www.facebook.com/Biopharma.parapharmacie"
+  const instagramUrl = siteSettings.instagramUrl || "https://www.instagram.com/biopharma_grombalia"
+  const whatsappDigits = (siteSettings.contactWhatsapp || "").replace(/\D/g, "")
 
   // Load cart and favorites from localStorage on component mount
   useEffect(() => {
@@ -857,22 +867,37 @@ export default function VitaPharmWebsite() {
                 {
                   icon: MapPin,
                   title: "Adresse",
-                  content: "Rue El Moez, Grombalia, Tunisia, 8030",
+                  content: contactAddress,
                   gradient: "from-red-500 to-pink-500"
                 },
                 {
                   icon: Phone,
                   title: "Téléphone",
-                  content: "26 744 525",
+                  content: contactPhone,
+                  href: `tel:${contactPhone.replace(/[^\d+]/g, "")}`,
                   gradient: "from-green-500 to-emerald-500"
                 },
+                ...(siteSettings.contactWhatsapp ? [{
+                  icon: MessageCircle,
+                  title: "WhatsApp",
+                  content: siteSettings.contactWhatsapp,
+                  href: whatsappDigits ? `https://wa.me/${whatsappDigits}` : undefined,
+                  gradient: "from-emerald-500 to-teal-500"
+                }] : []),
                 {
                   icon: Mail,
                   title: "Email",
-                  content: "biopharma.tunisie@gmail.com",
+                  content: contactEmail,
+                  href: `mailto:${contactEmail}`,
                   gradient: "from-blue-500 to-cyan-500"
-                }
-              ].map((item, index) => {
+                },
+                ...(siteSettings.contactHours ? [{
+                  icon: Clock,
+                  title: "Horaires",
+                  content: siteSettings.contactHours,
+                  gradient: "from-amber-500 to-orange-500"
+                }] : [])
+              ].map((item: { icon: React.ElementType; title: string; content: string; href?: string; gradient: string }, index) => {
                 const Icon = item.icon
                 return (
                   <Card key={index} className="group hover:shadow-xl transition-all duration-300 border-2 border-green-100 hover:border-green-300 bg-gradient-to-br from-white to-green-50/30">
@@ -883,7 +908,18 @@ export default function VitaPharmWebsite() {
                         </div>
                         <div>
                           <h3 className="font-bold text-gray-900 mb-2 text-lg group-hover:text-green-600 transition-colors">{item.title}</h3>
-                          <p className="text-gray-600 leading-relaxed">{item.content}</p>
+                          {item.href ? (
+                            <a
+                              href={item.href}
+                              target={item.href.startsWith("http") ? "_blank" : undefined}
+                              rel={item.href.startsWith("http") ? "noopener noreferrer" : undefined}
+                              className="text-gray-600 leading-relaxed hover:text-green-600 transition-colors break-all"
+                            >
+                              {item.content}
+                            </a>
+                          ) : (
+                            <p className="text-gray-600 leading-relaxed whitespace-pre-line">{item.content}</p>
+                          )}
                         </div>
                       </div>
                     </CardContent>
@@ -929,7 +965,7 @@ export default function VitaPharmWebsite() {
               </p>
               <div className="flex items-center gap-3">
                 <a
-                  href="https://www.facebook.com/Biopharma.parapharmacie"
+                  href={facebookUrl}
                   target="_blank"
                   rel="noopener noreferrer"
                   aria-label="Facebook BioPharma"
@@ -938,7 +974,7 @@ export default function VitaPharmWebsite() {
                   <Facebook className="w-5 h-5" />
                 </a>
                 <a
-                  href="https://www.instagram.com/biopharma_grombalia"
+                  href={instagramUrl}
                   target="_blank"
                   rel="noopener noreferrer"
                   aria-label="Instagram BioPharma"
@@ -947,7 +983,7 @@ export default function VitaPharmWebsite() {
                   <Instagram className="w-5 h-5" />
                 </a>
                 <a
-                  href="mailto:biopharma.tunisie@gmail.com"
+                  href={`mailto:${contactEmail}`}
                   aria-label="Email BioPharma"
                   className="w-10 h-10 rounded-full border border-gray-700 text-gray-300 hover:text-white hover:border-green-500 hover:bg-green-600/20 transition-colors flex items-center justify-center"
                 >
@@ -1005,6 +1041,11 @@ export default function VitaPharmWebsite() {
         updateQuantity={updateQuantity} 
         removeFromCart={removeFromCart} 
         clearCart={clearCart}
+        onOrderSuccess={() => {
+          setCartItems([])
+          localStorage.removeItem('cart')
+        }}
+        onUserUpdate={(u: User) => setUser(prev => (prev ? { ...prev, ...u } : prev))}
       />
 
       {/* Mobile Bottom Navigation */}

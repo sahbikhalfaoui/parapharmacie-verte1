@@ -34,6 +34,7 @@ import {
 } from "lucide-react"
 import { motion, AnimatePresence } from "framer-motion"
 import { Textarea } from "@/components/ui/textarea"
+import { useSiteSettings } from "@/lib/use-site-settings"
 
 // Define the Product type for the navbar
 interface NavbarProduct {
@@ -107,6 +108,7 @@ const NavbarProductDetailModal: React.FC<{
   onAddToCart: (product: FullProduct) => void
   user: User | null
 }> = ({ product, isOpen, onClose, onAddToCart, user }) => {
+  const siteSettings = useSiteSettings()
   const [quantity, setQuantity] = useState(1)
   const [activeTab, setActiveTab] = useState('description')
   const [isAddingToCart, setIsAddingToCart] = useState(false)
@@ -351,6 +353,14 @@ const NavbarProductDetailModal: React.FC<{
                             </li>
                             <li className="flex items-center space-x-2">
                               <CheckCircle className="w-4 h-4 text-green-600" />
+                              <span>
+                                {siteSettings.deliveryFee > 0
+                                  ? `Frais de livraison: ${siteSettings.deliveryFee} TND${siteSettings.freeDeliveryThreshold > 0 ? ` (gratuite dès ${siteSettings.freeDeliveryThreshold} TND d'achat)` : ''}`
+                                  : 'Livraison gratuite'}
+                              </span>
+                            </li>
+                            <li className="flex items-center space-x-2">
+                              <CheckCircle className="w-4 h-4 text-green-600" />
                               <span>Livraison express disponible</span>
                             </li>
                             <li className="flex items-center space-x-2">
@@ -395,6 +405,14 @@ const Navbar: React.FC<NavbarProps> = ({
   minimal = false
 }) => {
   const router = useRouter()
+  const siteSettings = useSiteSettings()
+  const contactPhone = siteSettings.contactPhone || '+216 26 744 525'
+  const customAddress = (siteSettings.contactAddress || '').trim()
+  const contactAddress = customAddress || 'Grombalia, Tunisia'
+  const contactMapUrl = customAddress
+    ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(customAddress)}`
+    : 'https://maps.app.goo.gl/66ZSb1mcWrwerZqm6'
+  const contactHours = siteSettings.contactHours?.trim() || 'Lun-Sam: 8h-20h'
   const [isMenuOpen, setIsMenuOpen] = useState(false)
   const [scrolled, setScrolled] = useState(false)
   const [hoveredCategory, setHoveredCategory] = useState<string | null>(null)
@@ -563,27 +581,36 @@ const Navbar: React.FC<NavbarProps> = ({
         <div className="max-w-7xl mx-auto px-3 sm:px-4 lg:px-8">
           <div className="flex items-center justify-between h-10 text-xs sm:text-sm">
             <div className="flex items-center space-x-3 sm:space-x-4 md:space-x-6 text-gray-700 overflow-x-auto scrollbar-hide">
-              <div className="flex items-center space-x-1 sm:space-x-2 hover:text-green-600 transition-colors cursor-pointer flex-shrink-0">
+              <a
+                href={`tel:${contactPhone.replace(/\s+/g, '')}`}
+                className="flex items-center space-x-1 sm:space-x-2 hover:text-green-600 transition-colors cursor-pointer flex-shrink-0"
+              >
                 <Phone className="w-3 h-3 sm:w-4 sm:h-4" />
-                <span className="text-xs sm:text-sm">+216 26 744 525</span>
-              </div>
+                <span className="text-xs sm:text-sm">{contactPhone}</span>
+              </a>
               <a 
-                href="https://maps.app.goo.gl/66ZSb1mcWrwerZqm6" 
+                href={contactMapUrl} 
                 target="_blank" 
                 rel="noopener noreferrer"
                 className="hidden xs:flex items-center space-x-1 sm:space-x-2 hover:text-green-600 transition-colors cursor-pointer flex-shrink-0"
               >
                 <MapPin className="w-3 h-3 sm:w-4 sm:h-4" />
-                <span className="text-xs sm:text-sm">Grombalia, Tunisia</span>
+                <span className="text-xs sm:text-sm">{contactAddress}</span>
               </a>
               <div className="hidden sm:flex items-center space-x-1 sm:space-x-2 hover:text-green-600 transition-colors cursor-pointer flex-shrink-0">
                 <Clock3 className="w-3 h-3 sm:w-4 sm:h-4" />
-                <span className="text-xs sm:text-sm">Lun-Sam: 8h-20h</span>
+                <span className="text-xs sm:text-sm">{contactHours}</span>
               </div>
             </div>
             <div className="text-green-700 font-medium hidden xs:flex items-center space-x-1 sm:space-x-2 animate-pulse flex-shrink-0">
               <span>✅</span>
-              <span className="text-xs sm:text-sm">Livraison gratuite</span>
+              <span className="text-xs sm:text-sm">
+                {siteSettings.deliveryFee > 0 && siteSettings.freeDeliveryThreshold > 0
+                  ? `Livraison gratuite dès ${siteSettings.freeDeliveryThreshold} TND`
+                  : siteSettings.deliveryFee > 0
+                    ? `Livraison: ${siteSettings.deliveryFee} TND`
+                    : 'Livraison gratuite'}
+              </span>
             </div>
           </div>
         </div>
